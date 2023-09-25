@@ -1,8 +1,10 @@
-﻿namespace Lobbybot;
-class Program
-{
-    static void Main(string[] args)
-    {
-        Console.WriteLine("Hello, World!");
+﻿using FortniteCS;
+
+namespace Lobbybot;
+
+public class Program {
+    static void Main(string[] args) {
+        Console.WriteLine("Hello World!");
+        Console.ReadLine();
     }
 }
