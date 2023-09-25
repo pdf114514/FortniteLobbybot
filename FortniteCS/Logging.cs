@@ -10,6 +10,13 @@ internal static class Logging {
         Console.ResetColor();
     }
 
+    public static void WarnSerialized(object obj) => Warn(JsonSerializer.Serialize(obj, new JsonSerializerOptions() { WriteIndented = true }));
+    public static void Warn(string message) {
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}:WRN]{message}");
+        Console.ResetColor();
+    }
+
     public static void DebugSerialized(object obj) => Debug(JsonSerializer.Serialize(obj, new JsonSerializerOptions() { WriteIndented = true }));
     public static void Debug(string message) {
         Console.ForegroundColor = ConsoleColor.Cyan;

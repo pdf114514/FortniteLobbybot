@@ -1,6 +1,6 @@
 namespace FortniteCS;
 
-public class FortniteClient {
+public partial class FortniteClient {
     public ForntiteConfig Config { get; init; } = new();
 
     private AuthBase<AuthSession<FortniteAuthData>, FortniteAuthData> Auth { get; init; }
@@ -11,6 +11,8 @@ public class FortniteClient {
     }
 
     public async Task Start() {
+        RegisterEvents();
         Session = await Auth.Login();
+        Ready.Invoke(this, EventArgs.Empty);
     }
 }
