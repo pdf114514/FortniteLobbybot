@@ -1,3 +1,5 @@
+global using K = System.Text.Json.Serialization.JsonPropertyNameAttribute;
+
 namespace FortniteCS;
 
 public static class Utils {

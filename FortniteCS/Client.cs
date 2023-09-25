@@ -13,6 +13,6 @@ public partial class FortniteClient {
     public async Task Start() {
         RegisterEvents();
         Session = await Auth.Login();
-        Ready.Invoke(this, EventArgs.Empty);
+        Ready.Invoke();
     }
 }
