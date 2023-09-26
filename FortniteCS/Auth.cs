@@ -1,6 +1,6 @@
-using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Web;
 
 namespace FortniteCS;
@@ -14,8 +14,8 @@ public class DeviceAuthObject {
     [K("deviceId")] public required string DeviceId { get; init; }
     [K("accountId")] public required string AccountId { get; init; }
     [K("secret")] public required string Secret { get; init; }
-    [K("userAgent")] public string? UserAgent { get; init; }
-    [K("created")] public _Created? Created { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] [K("userAgent")] public string? UserAgent { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] [K("created")] public _Created? Created { get; init; }
 }
 
 public class ExchangeCodeObject {
@@ -44,7 +44,7 @@ public class FortniteAuthData : AuthData {
     [K("displayName")] public required string DisplayName { get; set; }
     [K("app")] public required string App { get; set; }
     [K("in_app_id")] public required string InAppId { get; set; }
-    [K("device_id")] public required string DeviceId { get; set; }
+    [K("device_id")] public string? DeviceId { get; set; } // not included?
 }
 
 public class FortniteClientCredentialsAuthData : AuthData {
@@ -69,7 +69,10 @@ public abstract class AuthBase<T1, T2> where T1 : AuthSession<T2> where T2 : Aut
         if (!body.Keys.Contains("token_type")) body.Add("token_type" , "eg1");
         request.Content = new FormUrlEncodedContent(body);
         var response = await Http.SendAsync(request);
-        if (!response.IsSuccessStatusCode) throw new Exception("Failed to authenticate");
+        if (!response.IsSuccessStatusCode) {
+            Logging.Error($"Failed to authenticate:\n{JsonSerializer.Serialize(await response.Content.ReadAsStringAsync(), new JsonSerializerOptions { WriteIndented = true })}");
+            throw new Exception("Failed to authenticate");
+        }
         var data = JsonSerializer.Deserialize<T2>(await response.Content.ReadAsStringAsync()) ?? throw new Exception("Failed to deserialize authentication data");
         var session = Activator.CreateInstance(typeof(T1), data, Client.Secret) as T1 ?? throw new Exception("Failed to create authentication session");
         return session;
@@ -169,7 +172,7 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
     public string DisplayName { get; private set; }
     public bool IsInternalClient { get; private set; }
     public string InAppId { get; private set; }
-    public string DeviceId { get; private set; }
+    public string? DeviceId { get; private set; }
     public string RefreshToken { get; private set; }
     public DateTime RefreshExpiresAt { get; private set; }
 
@@ -242,7 +245,7 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
         FortniteAuthSession session = this;
         if (ClientId != AuthClients.FortniteIOSGameClient.ClientId) session = await SwitchClient(AuthClients.FortniteIOSGameClient); 
         var request = new HttpRequestMessage(HttpMethod.Post, $"https://account-public-service-prod.ol.epicgames.com/account/api/public/account/{AccountId}/deviceAuth");
-        request.Headers.Add("Authorization", $"bearer {AccessToken}");
+        request.Headers.Add("Authorization", $"bearer {session.AccessToken}");
         var response = await Http.SendAsync(request);
         if (!response.IsSuccessStatusCode) {
             Logging.Error($"Failed to create device auth:\n{JsonSerializer.Serialize(await response.Content.ReadAsStringAsync(), new JsonSerializerOptions { WriteIndented = true })}");

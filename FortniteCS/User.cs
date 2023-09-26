@@ -32,8 +32,8 @@ public class ExternalAuths {
 }
 
 public class FortniteClientUserData : FortniteUserData {
-    [K("name")] public required string Name { get; init; }
-    [K("lastName")] public required string LastName { get; init; }
+    [K("name")] public string? Name { get; init; }
+    [K("lastName")] public string? LastName { get; init; }
     [K("email")] public required string Email { get; init; }
     [K("failedLoginAttempts")] public required int FailedLoginAttempts { get; init; }
     [K("lastLogin")] public required string LastLogin { get; init; }
@@ -60,15 +60,6 @@ public class FriendConnections {
     [K("nintendo")] public FriendConnection? Nintendo { get; init; }
 }
 
-public class FortniteFriendData : FortniteUserData {
-    [K("created")] public required string Created { get; init; }
-    [K("favorite")] public required bool Favorite { get; init; }
-    [K("connections")] public FriendConnections? Connections { get; init; }
-    [K("mutual")] public int? Mutual { get; init; }
-    [K("alias")] public required string Alias { get; init; }
-    [K("note")] public required string Note { get; init; }
-}
-
 public class FortniteUser {
     public string AccountId { get; init; }
     public string? EpicGamesDisplayName { get; private set; }
@@ -85,8 +76,8 @@ public class FortniteUser {
 }
 
 public class FortniteClientUser : FortniteUser {
-    public string Name { get; init; }
-    public string LastName { get; init; }
+    public string? Name { get; init; }
+    public string? LastName { get; init; }
     public string Email { get; init; }
     public int FailedLoginAttempts { get; init; }
     public DateTime LastLogin { get; init; }
