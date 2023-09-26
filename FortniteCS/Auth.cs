@@ -1,8 +1,28 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Web;
 
 namespace FortniteCS;
+
+public class DeviceAuthObject {
+    public class _Created {
+        [K("location")] public required string Location { get; init; }
+        [K("ipAddress")] public required string IpAddress { get; init; }
+        [K("dateTime")] public required string DateTime { get; init; }
+    }
+    [K("deviceId")] public required string DeviceId { get; init; }
+    [K("accountId")] public required string AccountId { get; init; }
+    [K("secret")] public required string Secret { get; init; }
+    [K("userAgent")] public string? UserAgent { get; init; }
+    [K("created")] public _Created? Created { get; init; }
+}
+
+public class ExchangeCodeObject {
+    [K("expiresInSeconds")] public required int ExpiresInSeconds { get; init; }
+    [K("code")] public required string Code { get; init; }
+    [K("creatingClientId")] public required string CreatingClientId { get; init; }
+}
 
 #region AuthData
 
@@ -40,13 +60,13 @@ public class FortniteClientCredentialsAuthData : AuthData {
 
 public abstract class AuthBase<T1, T2> where T1 : AuthSession<T2> where T2 : AuthData {
     protected HttpClient Http = new();
-    public abstract AuthClient Client { get; }
+    public virtual AuthClient Client { get; internal set; } = AuthClients.FortnitePCGameClient;
     public abstract Task<T1> Login();
 
     protected async Task<T1> Authenticate(Dictionary<string, string> body) {
         var request = new HttpRequestMessage(HttpMethod.Post, "https://account-public-service-prod.ol.epicgames.com/account/api/oauth/token");
         request.Headers.Add("Authorization", $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"{Client.ClientId}:{Client.Secret}"))}");
-        if (body.Keys.Contains("token_type")) body.Add("token_type" , "eg1");
+        if (!body.Keys.Contains("token_type")) body.Add("token_type" , "eg1");
         request.Content = new FormUrlEncodedContent(body);
         var response = await Http.SendAsync(request);
         if (!response.IsSuccessStatusCode) throw new Exception("Failed to authenticate");
@@ -56,8 +76,7 @@ public abstract class AuthBase<T1, T2> where T1 : AuthSession<T2> where T2 : Aut
     }
 }
 
-public class AuthorizationCodeAuth : AuthBase<AuthSession<FortniteAuthData>, FortniteAuthData> {
-    public override AuthClient Client => AuthClients.FortnitePCGameClient;
+public class AuthorizationCodeAuth : AuthBase<FortniteAuthSession, FortniteAuthData> {
     private string AuthorizationCode { get; }
 
     public AuthorizationCodeAuth(string authorizationCode) {
@@ -66,10 +85,56 @@ public class AuthorizationCodeAuth : AuthBase<AuthSession<FortniteAuthData>, For
         else throw new Exception("Invalid authorization code");
     }
 
-    public override Task<AuthSession<FortniteAuthData>> Login() {
+    public override Task<FortniteAuthSession> Login() {
         return Authenticate(new() {
             { "grant_type", "authorization_code" },
             { "code", AuthorizationCode }
+        });
+    }
+}
+
+public class DeviceAuth : AuthBase<FortniteAuthSession, FortniteAuthData> {
+    private string DeviceId { get; }
+    private string AccountId { get; }
+    private string Secret { get; }
+
+    public DeviceAuth(string deviceId, string accountId, string secret) {
+        if (deviceId.Length != 32) throw new Exception("Invalid device ID");
+        DeviceId = deviceId;
+        if (accountId.Length != 32) throw new Exception("Invalid account ID");
+        AccountId = accountId;
+        if (secret.Length != 32) throw new Exception("Invalid secret");
+        Secret = secret;
+    }
+
+    public DeviceAuth(DeviceAuthObject deviceAuth) : this(deviceAuth.DeviceId, deviceAuth.AccountId, deviceAuth.Secret) {}
+
+    public async override Task<FortniteAuthSession> Login() {
+        var prevClient = Client;
+        Client = AuthClients.FortniteIOSGameClient;
+        var session = await Authenticate(new() {
+            { "grant_type", "device_auth" },
+            { "device_id", DeviceId },
+            { "account_id", AccountId },
+            { "secret", Secret }
+        });
+        Client = prevClient;
+        return await session.SwitchClient(Client);
+    }
+}
+
+public class ExchangeCodeAuth : AuthBase<FortniteAuthSession, FortniteAuthData> {
+    private string ExchangeCode { get; }
+
+    public ExchangeCodeAuth(string exchangeCode) {
+        if (exchangeCode.Length != 32) throw new Exception("Invalid exchange code");
+        ExchangeCode = exchangeCode;
+    }
+
+    public override Task<FortniteAuthSession> Login() {
+        return Authenticate(new() {
+            { "grant_type", "exchange_code" },
+            { "exchange_code", ExchangeCode }
         });
     }
 }
@@ -161,6 +226,36 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
         }
     }
 
+    public async Task<ExchangeCodeObject> CreateExchangeCode() {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://account-public-service-prod.ol.epicgames.com/account/api/oauth/exchange");
+        request.Headers.Add("Authorization", $"bearer {AccessToken}");
+        var response = await Http.SendAsync(request);
+        if (!response.IsSuccessStatusCode) {
+            Logging.Error($"Failed to create exchange code:\n{JsonSerializer.Serialize(await response.Content.ReadAsStringAsync(), new JsonSerializerOptions { WriteIndented = true })}");
+            throw new Exception("Failed to create exchange code");
+        }
+        var data = JsonSerializer.Deserialize<ExchangeCodeObject>(await response.Content.ReadAsStringAsync()) ?? throw new Exception("Failed to deserialize exchange code data");
+        return data;
+    }
+
+    public async Task<DeviceAuthObject> CreateDeviceAuth() {
+        FortniteAuthSession session = this;
+        if (ClientId != AuthClients.FortniteIOSGameClient.ClientId) session = await SwitchClient(AuthClients.FortniteIOSGameClient); 
+        var request = new HttpRequestMessage(HttpMethod.Post, $"https://account-public-service-prod.ol.epicgames.com/account/api/public/account/{AccountId}/deviceAuth");
+        request.Headers.Add("Authorization", $"bearer {AccessToken}");
+        var response = await Http.SendAsync(request);
+        if (!response.IsSuccessStatusCode) {
+            Logging.Error($"Failed to create device auth:\n{JsonSerializer.Serialize(await response.Content.ReadAsStringAsync(), new JsonSerializerOptions { WriteIndented = true })}");
+            throw new Exception("Failed to create device auth");
+        }
+        var data = JsonSerializer.Deserialize<DeviceAuthObject>(await response.Content.ReadAsStringAsync()) ?? throw new Exception("Failed to deserialize device auth data");
+        return data;
+    }
+
+    public async Task<FortniteAuthSession> SwitchClient(AuthClient authClient) {
+        var exchangeCode = await CreateExchangeCode();
+        return await new ExchangeCodeAuth(exchangeCode.Code) { Client = authClient }.Login();
+    }
     public async void Dispose() {
         RefreshTimer?.Dispose();
         var request = new HttpRequestMessage(HttpMethod.Delete, $"https://account-public-service-prod.ol.epicgames.com/account/api/oauth/sessions/kill/{AccessToken}");

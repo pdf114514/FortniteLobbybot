@@ -46,7 +46,7 @@ public class FortniteClientEventAttribute : Attribute {
 }
 
 public partial class FortniteClient {
-    public event Action Ready;
+    public event Action? Ready;
 
     private void RegisterEvents() {
         Logging.Debug("Registering events");

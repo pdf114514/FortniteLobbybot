@@ -12,4 +12,5 @@ public class ForntiteConfig {
     public int FriendOfflineTimeout { get; set; } = 300; // in seconds
     public bool RestartOnInvalidRefresh { get; set; } = true;
     public string Language { get; set; } = "en-US"; // Accept-Language header
+    public bool KillOtherTokens { get; set; } = true;
 }

@@ -47,7 +47,7 @@ public class FortniteClientUserData : FortniteUserData {
     [K("emailVerified")] public required bool EmailVerified { get; init; }
     [K("minorVerified")] public required bool MinorVerified { get; init; }
     [K("minorExpected")] public required bool MinorExpected { get; init; }
-    [K("minorStatus")] public required bool MinorStatus { get; init; }
+    [K("minorStatus")] public required string MinorStatus { get; init; }
 }
 
 public class FriendConnection {
@@ -100,7 +100,7 @@ public class FortniteClientUser : FortniteUser {
     public bool EmailVerified { get; init; }
     public bool MinorVerified { get; init; }
     public bool MinorExpected { get; init; }
-    public bool MinorStatus { get; init; }
+    public string MinorStatus { get; init; }
 
     public FortniteClientUser(FortniteClientUserData data) : base(data) {
         Name = data.Name;

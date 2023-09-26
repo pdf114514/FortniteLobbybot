@@ -5,14 +5,22 @@ namespace Lobbybot;
 
 public class Program {
     static void Main(string[] args) {
-        Console.WriteLine("Hello World!");
-        Console.WriteLine("Enter your authorization code:");
-        var client = new FortniteClient(new AuthorizationCodeAuth(Console.ReadLine()!));
-        client.Ready += () => {
-            Console.WriteLine("Ready!");
-            Console.WriteLine(JsonSerializer.Serialize(client.Config, new JsonSerializerOptions { WriteIndented = true }));
+        AuthBase<FortniteAuthSession, FortniteAuthData> auth;
+        if (File.Exists("deviceAuth.json")) {
+            auth = new DeviceAuth(JsonSerializer.Deserialize<DeviceAuthObject>(File.ReadAllText("deviceAuth.json"))!);
+        } else {
+            Console.WriteLine("Enter your authorization code:");
+            auth = new AuthorizationCodeAuth(Console.ReadLine()!);
+        }
+        var client = new FortniteClient(auth);
+        client.Ready += async () => {
+            Console.WriteLine($"Ready! {client.User.AccountId} / {client.User.DisplayName}");
+            if (!File.Exists("deviceAuth.json")) {
+                File.WriteAllText("deviceAuth.json", JsonSerializer.Serialize(await client.Session.CreateDeviceAuth()));
+            }
         };
         client.Start().Wait();
+        Console.WriteLine("Press enter to exit");
         Console.ReadLine();
     }
 }
