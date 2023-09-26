@@ -48,6 +48,13 @@ public class FortniteClientEventAttribute : Attribute {
 public partial class FortniteClient {
     public event Action? Ready;
 
+    public event Action<FortniteFriend>? FriendRemoved;
+    public event Action<IncomingPendingFriend>? FriendRequestReceived;
+    public event Action<OutgoingPendingFriend>? FriendRequestSent;
+    public event Action<PendingFriend>? FriendRequestCancelled;
+    public event Action<FortniteFriend>? FriendRequestAccepted;
+    public event Action<PendingFriend>? FriendRequestRejected;
+
     private void RegisterEvents() {
         Logging.Debug("Registering events");
         var t = GetType();
@@ -71,7 +78,44 @@ public partial class FortniteClient {
     }
 
     [FortniteClientEvent(FortniteClientEvents.Ready)]
-    public void OnReady() {
+    internal void OnReady() {
         Logging.Debug("Client is ready");
+    }
+
+    internal void OnFriendRemoved(FortniteFriend friend) {
+        Logging.Debug($"Friend removed {friend.DisplayName}");
+        _Friends.RemoveAll(x => x.AccountId == friend.AccountId);
+        FriendRemoved?.Invoke(friend);
+    }
+
+    internal void OnFriendRequestReceived(IncomingPendingFriend friend) {
+        Logging.Debug($"Friend request received from {friend.AccountId}");
+        _PendingFriends.Add(friend);
+        FriendRequestReceived?.Invoke(friend);
+    }
+
+    internal void OnFriendRequestSent(OutgoingPendingFriend friend) {
+        Logging.Debug($"Friend request sent to {friend.AccountId}");
+        _PendingFriends.Add(friend);
+        FriendRequestSent?.Invoke(friend);
+    }
+
+    internal void OnFriendRequestCancelled(PendingFriend friend) {
+        Logging.Debug($"Friend request cancelled to {friend.AccountId}");
+        _PendingFriends.RemoveAll(x => x.AccountId == friend.AccountId);
+        FriendRequestCancelled?.Invoke(friend);
+    }
+
+    internal void OnFriendRequestAccepted(FortniteFriend friend) {
+        Logging.Debug($"Friend request accepted from {friend.DisplayName}");
+        _Friends.Add(friend);
+        _PendingFriends.RemoveAll(x => x.AccountId == friend.AccountId);
+        FriendRequestAccepted?.Invoke(friend);
+    }
+
+    internal void OnFriendRequestRejected(PendingFriend friend) {
+        Logging.Debug($"Friend request rejected from {friend.AccountId}");
+        _PendingFriends.RemoveAll(x => x.AccountId == friend.AccountId);
+        FriendRequestRejected?.Invoke(friend);
     }
 }
