@@ -1,7 +1,7 @@
 using SharpXMPP;
 using SharpXMPP.XMPP.Client.Elements;
 using System.Text.Json;
-using WebSocket4Net;
+using System.Xml.Linq;
 
 namespace FortniteCS;
 
@@ -9,12 +9,16 @@ public class FortniteXMPP : IDisposable {
     private FortniteClient Client { get; }
     public XmppWebSocketConnection Connection { get; }
 
+    private List<TaskCompletionSource<bool>> _ReadyTasks { get; } = new();
+
     public FortniteXMPP(FortniteClient client) {
         Client = client;
         Connection = new(new($"{Client.User.AccountId}@prod.ol.epicgames.com/V2:Fortnite:{Client.Config.Platform}::{Guid.NewGuid().ToString("N").ToUpper()}"), Client.Session.AccessToken, "wss://xmpp-service-prod.ol.epicgames.com");
 
         Connection.SignedIn += (XmppConnection sender, SignedInArgs e) => {
             Logging.Debug($"XMPP signed in! {e.Jid}");
+            _ReadyTasks.ForEach(x => x.SetResult(true));
+            _ReadyTasks.Clear();
         };
 
         Connection.Presence += (XmppConnection sender, XMPPPresence e) => {
@@ -141,6 +145,29 @@ public class FortniteXMPP : IDisposable {
     }
 
     public Task Connect() => Connection.ConnectAsync();
+
+    public Task WaitForReady() {
+        var tcs = new TaskCompletionSource<bool>();
+        _ReadyTasks.Add(tcs);
+        return tcs.Task;
+    }
+
+    public void JoinMUC(FortniteParty party) { // TODO support password
+        // Connection.BookmarkManager.Join(new() {
+        //     JID = new($"Party-{party.PartyId}@muc.prod.ol.epicgames.com"),
+        //     Nick = $"{Client.User.DisplayName}:{Client.User.AccountId}:{Connection.Jid.Resource}"
+        // });
+        var presence = new XMPPPresence(Connection.Capabilities) { To = new($"Party-{party.PartyId}@muc.prod.ol.epicgames.com/{Client.User.DisplayName}:{Client.User.AccountId}:{Connection.Jid.Resource}") };
+        var xElement = new XElement(XNamespace.Get("http://jabber.org/protocol/muc") + "x");
+        // if (password thing is present) xElement.Add(new XElement(XNamespace.Get("http://jabber.org/protocol/muc") + "password", password));
+
+        presence.Add(xElement);
+        Connection.Send(presence);
+    }
+
+    public void LeaveMUC() { // TODO implement
+        Logging.Warn("TODO: LeaveMUC");
+    }
 
     public void Dispose() {
         Connection.Dispose();

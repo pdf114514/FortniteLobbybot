@@ -90,8 +90,8 @@ public class PartyOptions {
     public string Discoverability { get; set; } = EDiscoverability.All;
     public PartyPrivacy Privacy { get; set; } = PartyPrivacy.Public;
     public int MaxSize { get; set; } = 16;
-    public int? IntentionTTL { get; set; }
-    public int? InviteTTL { get; set; }
+    public int IntentionTTL { get; set; } = 60;
+    public int InviteTTL { get; set; } = 14400; // 4 hours
     public bool ChatEnabled { get; set; } = true;
 }
 
@@ -106,11 +106,18 @@ public class FortnitePartyConfigData {
     [K("join_confirmation")] public required bool JoinConfirmation { get; init; }
 }
 
+public class FortnitePartyMemberConnectionData {
+    [K("id")] public required string Id { get; init; } // JID
+    [K("connected_at")] public required string ConnectedAt { get; init; }
+    [K("updated_at")] public required string UpdatedAt { get; init; }
+    [K("yield_leadership")] public required bool YieldLeadership { get; init; }
+    [K("meta")] public required MetaDict Meta { get; init; }
+}
+
 public class FortnitePartyMemberData {
-    [K("id")] public required string Id { get; init; }
     [K("account_id")] public required string AccountId { get; init; }
-    [K("account_dn")] public string? AccountDn { get; init; }
-    [K("meta")] public required Dictionary<string, string> Meta { get; init; }
+    [K("meta")] public required MetaDict Meta { get; init; }
+    [K("connections")] public required List<FortnitePartyMemberConnectionData> Connections { get; init; }
     [K("revision")] public required int Revision { get; init; }
     [K("updated_at")] public required string UpdatedAt { get; init; }
     [K("joined_at")] public required string JoinedAt { get; init; }
@@ -123,26 +130,47 @@ public class FortnitePartyData {
     [K("updated_at")] public required string UpdatedAt { get; init; }
     [K("config")] public required FortnitePartyConfigData Config { get; init; }
     [K("members")] public required List<FortnitePartyMemberData> Members { get; init; }
-    [K("meta")] public required Dictionary<string, string> Meta { get; init; }
+    [K("meta")] public required MetaDict Meta { get; init; }
     [K("invites")] public required List<object> Invites { get; init; }
     [K("revision")] public required int Revision { get; init; }
+    // applicants
+    // invites
+    // intentions
+}
+
+public class FortnitePartyMemberConnection {
+    public string Id { get; } // JID
+    public DateTime ConnectedAt { get; }
+    public DateTime UpdatedAt { get; }
+    public bool YieldLeadership { get; }
+    public MetaDict Meta { get; }
+
+    public FortnitePartyMemberConnection(FortnitePartyMemberConnectionData data) {
+        Id = data.Id;
+        ConnectedAt = Utils.ConvertToDateTime(data.ConnectedAt);
+        UpdatedAt = Utils.ConvertToDateTime(data.UpdatedAt);
+        YieldLeadership = data.YieldLeadership;
+        Meta = data.Meta;
+    }
 }
 
 public class FortnitePartyMember {
-    public FortniteParty Party { get; }
+    public FortniteParty Party { get; internal set; }
     public string AccountId { get; }
     public string? DisplayName { get; }
+    public List<FortnitePartyMemberConnection> Connections { get; }
     public string Role { get; internal set; }
     public DateTime JoinedAt { get; set; }
     public DateTime UpdatedAt { get; internal set; }
-    public Dictionary<string, string> Meta { get; }
+    public MetaDict Meta { get; }
     public int Revision { get; internal set; }
     public bool ReceivedIninitalStateUpdate { get; internal set; }
 
     public FortnitePartyMember(FortniteParty party, FortnitePartyMemberData data) {
         Party = party;
         AccountId = data.AccountId;
-        DisplayName = data.AccountDn;
+        DisplayName = data.Meta.GetValueOrDefault("urn:epic:member:dn_s");
+        Connections = data.Connections.Select(x => new FortnitePartyMemberConnection(x)).ToList();
         Role = data.Role;
         JoinedAt = Utils.ConvertToDateTime(data.JoinedAt);
         UpdatedAt = Utils.ConvertToDateTime(data.UpdatedAt);
@@ -165,7 +193,7 @@ public class FortniteParty {
     public PartyPrivacy Privary { get; }
     private List<FortnitePartyMember> _Members { get; }
     public ReadOnlyCollection<FortnitePartyMember> Members { get; }
-    public Dictionary<string, string> Meta { get; }
+    public MetaDict Meta { get; }
     public int Revision { get; }
 
     public FortniteParty(FortniteClient client, FortnitePartyData data) {
@@ -188,10 +216,27 @@ public class FortniteParty {
         Revision = data.Revision;
     }
 
+    public FortniteParty(FortniteClient client, FortniteParty party) {
+        Client = client;
+        PartyId = party.PartyId;
+        CreatedAt = party.CreatedAt;
+        Config = party.Config;
+        Privary = party.Privary;
+        _Members = new();
+        foreach (var member in party.Members) {
+            member.Party = this;
+            _Members.Add(member);
+        }
+        Members = _Members.AsReadOnly();
+        Meta = party.Meta;
+        Revision = party.Revision;
+    }
+
     public int Size => Members.Count;
     public int MaxSize => Config.MaxSize;
 }
 
 public class FortniteClientParty : FortniteParty {
     public FortniteClientParty(FortniteClient client, FortnitePartyData data) : base(client, data) {}
+    public FortniteClientParty(FortniteClient client, FortniteParty party) : base(client, party) {}
 }

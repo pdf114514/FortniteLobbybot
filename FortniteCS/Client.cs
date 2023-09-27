@@ -1,6 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Net;
-using System.Text.Json;
 
 namespace FortniteCS;
 
@@ -18,7 +16,7 @@ public partial class FortniteClient : IDisposable {
     public ReadOnlyCollection<FortniteFriend> Friends => _Friends.AsReadOnly();
     private List<PendingFriend> _PendingFriends { get; } = new();
     public ReadOnlyCollection<PendingFriend> PendingFriends => _PendingFriends.AsReadOnly();
-    public FortniteClientParty Party { get; private set; } = null!;
+    public FortniteClientParty? Party { get; private set; }
 
     public FortniteClient(AuthBase<FortniteAuthSession, FortniteAuthData> auth) {
         Auth = auth;
@@ -31,6 +29,7 @@ public partial class FortniteClient : IDisposable {
         await UpdateFriends();
         XMPP = new(this);
         await XMPP.Connect();
+        await XMPP.WaitForReady();
         await InitializeParty(Config.CreateParty, Config.ForceNewParty);
         Ready?.Invoke();
     }

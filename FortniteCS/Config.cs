@@ -5,7 +5,7 @@ public class ForntiteConfig {
     public string DefaultStatus { get; set; } = "Battle Royale Lobby";
     public string DefaultOnlineType { get; set; } = PresenceOnlineType.Online;
     public string Platform { get; set; } = FortnitePlatform.Windows;
-    public Dictionary<string, string> DefaultPartyMemberMeta { get; set; } = new();
+    public MetaDict DefaultPartyMemberMeta { get; set; } = new();
     public PartyOptions PartyConfig { get; set; } = new();
     public bool CreateParty { get; set; } = true;
     public bool ForceNewParty { get; set; } = false;
