@@ -48,12 +48,36 @@ public class FortniteClientEventAttribute : Attribute {
 public partial class FortniteClient {
     public event Action? Ready;
 
+    public event Action<FortniteFriend>? FriendMessage;
+    public event Action<FortniteFriend>? FriendPresence;
+    public event Action<FortniteFriend>? FriendOnline;
+    public event Action<FortniteFriend>? FriendOffline;
     public event Action<FortniteFriend>? FriendRemoved;
     public event Action<IncomingPendingFriend>? FriendRequestReceived;
     public event Action<OutgoingPendingFriend>? FriendRequestSent;
     public event Action<PendingFriend>? FriendRequestCancelled;
     public event Action<FortniteFriend>? FriendRequestAccepted;
     public event Action<PendingFriend>? FriendRequestRejected;
+
+    // public event Action<FortniteParty>? PartyUpdated;
+    // public event Action<FortniteParty>? PartyMessage;
+    // public event Action<FortniteParty>? PartyInvite;
+    // public event Action<FortniteParty>? PartyJoinRequest;
+    // public event Action<FortniteParty>? PartyJoinConfirmation;
+
+    public event Action<FortnitePartyMember>? PartyMemberJoined;
+    // public event Action<FortnitePartyMember>? PartyMemberUpdated;
+    // public event Action<FortnitePartyMember>? PartyMemberLeft;
+    // public event Action<FortnitePartyMember>? PartyMemberExpired;
+    // public event Action<FortnitePartyMember>? PartyMemberKicked;
+    // public event Action<FortnitePartyMember>? PartyMemberDisconnected;
+    // public event Action<FortnitePartyMember>? PartyMemberPromoted;
+    // public event Action<FortnitePartyMember>? PartyMemberOutfitUpdated;
+    // public event Action<FortnitePartyMember>? PartyMemberEmoteUpdated;
+    // public event Action<FortnitePartyMember>? PartyMemberBackpackUpdated;
+    // public event Action<FortnitePartyMember>? PartyMemberPickaxeUpdated;
+    // public event Action<FortnitePartyMember>? PartyMemberReadinessUpdated;
+    // public event Action<FortnitePartyMember>? PartyMemberMatchStateUpdated;
 
     private void RegisterEvents() {
         Logging.Debug("Registering events");
@@ -81,6 +105,11 @@ public partial class FortniteClient {
     internal void OnReady() {
         Logging.Debug("Client is ready");
     }
+
+    // FriendMessage
+    // FriendPresence
+    // FriendOnline
+    // FriendOffline
 
     internal void OnFriendRemoved(FortniteFriend friend) {
         Logging.Debug($"Friend removed {friend.DisplayName}");
@@ -117,5 +146,17 @@ public partial class FortniteClient {
         Logging.Debug($"Friend request rejected from {friend.AccountId}");
         _PendingFriends.RemoveAll(x => x.AccountId == friend.AccountId);
         FriendRequestRejected?.Invoke(friend);
+    }
+
+    // PartyUpdated
+    // PartyMessage
+    // PartyInvite
+    // PartyJoinRequest
+    // PartyJoinConfirmation
+
+    internal void OnPartyMemberJoined(FortnitePartyMember member) {
+        Logging.Debug($"Party member joined {member.DisplayName}");
+        Party?.Members.Append(member);
+        PartyMemberJoined?.Invoke(member);
     }
 }

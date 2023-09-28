@@ -191,7 +191,7 @@ public class FortniteParty {
     public DateTime CreatedAt { get; }
     public FortnitePartyConfigData Config { get; }
     public PartyPrivacy Privary { get; }
-    private List<FortnitePartyMember> _Members { get; }
+    internal List<FortnitePartyMember> _Members { get; }
     public ReadOnlyCollection<FortnitePartyMember> Members { get; }
     public MetaDict Meta { get; }
     public int Revision { get; }
