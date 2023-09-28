@@ -12,13 +12,15 @@ public class Program {
             Console.WriteLine("Enter your authorization code:");
             auth = new AuthorizationCodeAuth(Console.ReadLine()!);
         }
-        var client = new FortniteClient(auth);
+        using var client = new FortniteClient(auth);
         client.Ready += async () => {
             Console.WriteLine($"Ready! {client.User.AccountId} / {client.User.DisplayName}");
             if (!File.Exists("deviceAuth.json")) {
                 File.WriteAllText("deviceAuth.json", JsonSerializer.Serialize(await client.Session.CreateDeviceAuth()));
             }
         };
+        client.FriendRequestReceived += async friend => await client.AccpetFriendRequest(friend);
+        client.PartyMemberJoined += member => Console.WriteLine($"{member.DisplayName} joined the party!");
         client.Start().Wait();
         Console.WriteLine("Press enter to exit");
         Console.ReadLine();

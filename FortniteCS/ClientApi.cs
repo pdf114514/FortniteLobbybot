@@ -8,19 +8,7 @@ public partial class FortniteClient {
     public SemaphoreSlim PartyLock { get; } = new(1, 1);
     public SemaphoreSlim PartyChatLock { get; } = new(1, 1);
 
-    public async Task UpdateFriends() {
-        _Friends.Clear();
-        _PendingFriends.Clear();
-
-        var request = new HttpRequestMessage(HttpMethod.Get, $"https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/{User.AccountId}/summary");
-        request.Headers.Add("Authorization", $"bearer {Session.AccessToken}");
-        var response = await Http.SendAsync(request);
-        if (response.StatusCode != HttpStatusCode.OK) throw new Exception("Failed to get friends!");
-        var friendsSummary = JsonSerializer.Deserialize<FriendsSummaryData>(await response.Content.ReadAsStringAsync()) ?? throw new Exception("Failed to deserialize json!");
-        foreach (var friend in friendsSummary.Friends) _Friends.Add(new(friend));
-        foreach (var incoming in friendsSummary.Incoming) _PendingFriends.Add(new IncomingPendingFriend(incoming));
-        foreach (var outgoing in friendsSummary.Outgoing) _PendingFriends.Add(new OutgoingPendingFriend(outgoing));
-    }
+    #region Accounts
 
     private async Task<T1?> GetAccountByAccountId<T1, T2>(string accountId) where T1 : FortniteUser where T2 : FortniteUserData {
         var request = new HttpRequestMessage(HttpMethod.Get, $"https://account-public-service-prod.ol.epicgames.com/account/api/public/account/{accountId}");
@@ -41,6 +29,60 @@ public partial class FortniteClient {
         var json = await response.Content.ReadAsStringAsync();
         return new(JsonSerializer.Deserialize<FortniteUserData>(json) ?? throw new Exception("Failed to deserialize json!"));
     }
+
+    #endregion
+
+    #region Friends
+
+    public async Task UpdateFriends() {
+        _Friends.Clear();
+        _PendingFriends.Clear();
+
+        var request = new HttpRequestMessage(HttpMethod.Get, $"https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/{User.AccountId}/summary");
+        request.Headers.Add("Authorization", $"bearer {Session.AccessToken}");
+        var response = await Http.SendAsync(request);
+        if (response.StatusCode != HttpStatusCode.OK) throw new Exception("Failed to get friends!");
+        var friendsSummary = JsonSerializer.Deserialize<FriendsSummaryData>(await response.Content.ReadAsStringAsync()) ?? throw new Exception("Failed to deserialize json!");
+        foreach (var friend in friendsSummary.Friends) _Friends.Add(new(friend));
+        foreach (var incoming in friendsSummary.Incoming) _PendingFriends.Add(new IncomingPendingFriend(incoming));
+        foreach (var outgoing in friendsSummary.Outgoing) _PendingFriends.Add(new OutgoingPendingFriend(outgoing));
+    }
+
+    public async Task<FortniteFriend> GetFriend(string accountId) {
+        var request = new HttpRequestMessage(HttpMethod.Get, $"https://friends-public-service-prod.ol.epicgames.com/friends/api/v1/{User.AccountId}/friends/{accountId}");
+        request.Headers.Add("Authorization", $"bearer {Session.AccessToken}");
+        var response = await Http.SendAsync(request);
+        if (response.StatusCode != HttpStatusCode.OK) throw new Exception("Failed to get friend!");
+        var json = await response.Content.ReadAsStringAsync();
+        return new(JsonSerializer.Deserialize<FortniteFriendData>(json) ?? throw new Exception("Failed to deserialize json!"));
+    }
+
+    public async Task AddFriend(string accountId) {
+        var request = new HttpRequestMessage(HttpMethod.Post, $"https://friends-public-service-prod.ol.epicgames.com/friends/api/public/friends/{User.AccountId}/{accountId}");
+        request.Headers.Add("Authorization", $"bearer {Session.AccessToken}");
+        var response = await Http.SendAsync(request);
+        var json = await response.Content.ReadAsStringAsync();
+        if (response.StatusCode != HttpStatusCode.NoContent) {
+            Logging.Warn($"Failed to accept friend request! {response.StatusCode} - {json}");
+            throw new Exception("Failed to accept friend request!");
+        }
+    }
+
+    public async Task AccpetFriendRequest(IncomingPendingFriend friend) {
+        await AddFriend(friend.AccountId);
+    }
+
+    public async Task SendFriendRequest(string accountId) {
+        if (Friends.Any(x => x.AccountId == accountId)) throw new Exception("User is already your friend!");
+        if (PendingFriends.FirstOrDefault(x => x.AccountId == accountId) is var pendingFriend && pendingFriend is OutgoingPendingFriend) throw new Exception("User already has a pending friend request!");
+        await AddFriend(accountId);
+    }
+
+    public Task SendFriendRequest(FortniteUser user) => SendFriendRequest(user.AccountId);
+
+    #endregion
+
+    #region Party
 
     public async Task<FortniteClientParty?> GetClientParty() {
         var request = new HttpRequestMessage(HttpMethod.Get, $"https://party-service-prod.ol.epicgames.com/party/api/v1/Fortnite/user/{User.AccountId}");
@@ -68,7 +110,7 @@ public partial class FortniteClient {
         if (Party is null) return;
 
         await PartyLock.WaitAsync();
-        XMPP.LeaveMUC();
+        XMPP.LeaveMUC(Party);
 
         var request = new HttpRequestMessage(HttpMethod.Delete, $"https://party-service-prod.ol.epicgames.com/party/api/v1/Fortnite/parties/{Party.PartyId}/members/{User.AccountId}");
         request.Headers.Add("Authorization", $"bearer {Session.AccessToken}");
@@ -130,4 +172,6 @@ public partial class FortniteClient {
         Party = new(this, party);
         XMPP.JoinMUC(Party);
     }
+
+    #endregion
 }
