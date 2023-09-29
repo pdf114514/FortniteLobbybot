@@ -1,6 +1,6 @@
 namespace FortniteCS;
 
-public static class PresenceOnlineType {
+public static class EFortnitePresenceOnlineType {
     public const string Online = "online";
     public const string Away = "away";
     public const string ExtendedAway = "xa";

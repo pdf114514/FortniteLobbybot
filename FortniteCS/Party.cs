@@ -4,90 +4,95 @@ namespace FortniteCS;
 
 #region Enums
 
-public static class EJoinability {
+public static class EFortnitePartyJoinability {
     public const string Open = "OPEN";
     public const string InviteAndFormer = "INVITE_AND_FORMER";
 }
 
-public static class EDiscoverability {
+public static class EFortnitePartyDiscoverability {
     public const string All = "ALL";
     public const string InvitedOnly = "INVITED_ONLY";
 }
 
-public static class EPartyType {
+public static class EFortnitePartyType {
     public const string Public = "Public";
     public const string FriendsOnly = "FriendsOnly";
     public const string Private = "Private";
 }
 
-public static class EInviteRestriction {
+public static class EFortnitePartyInviteRestriction {
     public const string AnyMember = "AnyMember";
     public const string LeaderOnly = "LeaderOnly";
 }
 
-public static class EPresencePermission {
+public static class EFortnitePartyPresencePermission {
     public const string Anyone = "Anyone";
     public const string Leader = "Leader";
     public const string Noone = "Noone";
 }
 
-public static class EInvitePermission {
+public static class EFortnitePartyInvitePermission {
     public const string Anyone = "Anyone";
     public const string AnyMember = "AnyMember";
     public const string Leader = "Leader";
 }
 
+public static class EFortnitePartyMemberRole {
+    public const string Captain = "CAPTAIN";
+    public const string Member = "MEMBER";
+}
+
 #endregion
 
 public class PartyPrivacy {
-    public string PartyType { get; set; } = EPartyType.Public;
-    public string InviteRestriction { get; set; } = EInviteRestriction.AnyMember;
+    public string PartyType { get; set; } = EFortnitePartyType.Public;
+    public string InviteRestriction { get; set; } = EFortnitePartyInviteRestriction.AnyMember;
     public bool OnlyLeaderFriendsCanJoin { get; set; } = false;
-    public string PresencePermission { get; set; } = EPresencePermission.Anyone;
-    public string InvitePermission { get; set; } = EInvitePermission.Anyone;
+    public string PresencePermission { get; set; } = EFortnitePartyPresencePermission.Anyone;
+    public string InvitePermission { get; set; } = EFortnitePartyInvitePermission.Anyone;
     public bool AcceptingMembers { get; set; } = true;
     
     public static readonly PartyPrivacy Public = new() {
-        PartyType = EPartyType.Public,
-        InviteRestriction = EInviteRestriction.AnyMember,
+        PartyType = EFortnitePartyType.Public,
+        InviteRestriction = EFortnitePartyInviteRestriction.AnyMember,
         OnlyLeaderFriendsCanJoin = false,
-        PresencePermission = EPresencePermission.Anyone,
-        InvitePermission = EInvitePermission.Anyone,
+        PresencePermission = EFortnitePartyPresencePermission.Anyone,
+        InvitePermission = EFortnitePartyInvitePermission.Anyone,
         AcceptingMembers = true
     };
 
     public static readonly PartyPrivacy FriendsOnly = new() {
-        PartyType = EPartyType.FriendsOnly,
-        InviteRestriction = EInviteRestriction.AnyMember,
+        PartyType = EFortnitePartyType.FriendsOnly,
+        InviteRestriction = EFortnitePartyInviteRestriction.AnyMember,
         OnlyLeaderFriendsCanJoin = false,
-        PresencePermission = EPresencePermission.Anyone,
-        InvitePermission = EInvitePermission.AnyMember,
+        PresencePermission = EFortnitePartyPresencePermission.Anyone,
+        InvitePermission = EFortnitePartyInvitePermission.AnyMember,
         AcceptingMembers = true
     };
 
     public static readonly PartyPrivacy Private = new() {
-        PartyType = EPartyType.Private,
-        InviteRestriction = EInviteRestriction.AnyMember,
+        PartyType = EFortnitePartyType.Private,
+        InviteRestriction = EFortnitePartyInviteRestriction.AnyMember,
         OnlyLeaderFriendsCanJoin = false,
-        PresencePermission = EPresencePermission.Anyone,
-        InvitePermission = EInvitePermission.Anyone,
+        PresencePermission = EFortnitePartyPresencePermission.Anyone,
+        InvitePermission = EFortnitePartyInvitePermission.Anyone,
         AcceptingMembers = true
     };
 
     public static readonly PartyPrivacy StrictPrivate = new() {
-        PartyType = EPartyType.Private,
-        InviteRestriction = EInviteRestriction.LeaderOnly,
+        PartyType = EFortnitePartyType.Private,
+        InviteRestriction = EFortnitePartyInviteRestriction.LeaderOnly,
         OnlyLeaderFriendsCanJoin = false,
-        PresencePermission = EPresencePermission.Leader,
-        InvitePermission = EInvitePermission.Leader,
+        PresencePermission = EFortnitePartyPresencePermission.Leader,
+        InvitePermission = EFortnitePartyInvitePermission.Leader,
         AcceptingMembers = true
     };
 }
 
 public class PartyOptions {
     public bool JoinConfirmation { get; set; } = true;
-    public string Joinability { get; set; } = EJoinability.Open;
-    public string Discoverability { get; set; } = EDiscoverability.All;
+    public string Joinability { get; set; } = EFortnitePartyJoinability.Open;
+    public string Discoverability { get; set; } = EFortnitePartyDiscoverability.All;
     public PartyPrivacy Privacy { get; set; } = PartyPrivacy.Public;
     public int MaxSize { get; set; } = 16;
     public int IntentionTTL { get; set; } = 60;
@@ -178,7 +183,19 @@ public class FortnitePartyMember {
         Revision = data.Revision;
     }
 
-    public bool IsLeader => Role == "CAPTAIN";
+    public FortnitePartyMember(FortniteParty party, FortnitePartyMemberJoinedPayload data) {
+        Party = party;
+        AccountId = data.AccountId;
+        DisplayName = data.AccountDn;
+        Connections = new() { new(data.Connection) };
+        Role = EFortnitePartyMemberRole.Member;
+        JoinedAt = Utils.ConvertToDateTime(data.JoinedAt);
+        UpdatedAt = Utils.ConvertToDateTime(data.UpdatedAt);
+        Meta = new();
+        Revision = data.Revision;
+    }
+
+    public bool IsLeader => Role == EFortnitePartyMemberRole.Captain;
 }
 
 public class FortniteClientPartyMember : FortnitePartyMember {
