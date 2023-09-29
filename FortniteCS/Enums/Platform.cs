@@ -1,6 +1,6 @@
 namespace FortniteCS;
 
-public static class FortnitePlatform {
+public static class EFortnitePlatform {
     public const string Windows = "WIN";
     public const string Mac = "MAC";
     public const string PlayStation4 = "PSN";

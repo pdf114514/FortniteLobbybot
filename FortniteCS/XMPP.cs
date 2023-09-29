@@ -116,17 +116,12 @@ public class FortniteXMPP : IDisposable {
                         return;
                     }
 
-                    var member = Client.Party.Members.FirstOrDefault(x => x.AccountId == payload.AccountId, new(Client.Party, new() {
-                        AccountId = payload.AccountId,
-                        Connections = [payload.Connection],
-                        Revision = payload.Revision,
-                        Meta = payload.MemberStateUpdated,
-                        JoinedAt = payload.JoinedAt,
-                        UpdatedAt = payload.UpdatedAt,
-                        Role = "MEMBER" // ?
-                    }));
+                    if (Client.Party.Members.Any(x => x.AccountId == payload.AccountId)) {
+                        Logging.Warn($"Joined party {payload.PartyId} but member {payload.AccountId} already exists");
+                        return;
+                    }
 
-                    Client.OnPartyMemberJoined(member);
+                    Client.OnPartyMemberJoined(new(Client.Party, payload));
                     break;
                 }
                 case "com.epicgames.social.party.notification.v0.MEMBER_STATE_UPDATED": break;
