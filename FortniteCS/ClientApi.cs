@@ -110,7 +110,6 @@ public partial class FortniteClient {
         if (Party is null) return;
 
         await PartyLock.WaitAsync();
-        XMPP.LeaveMUC(Party);
 
         var request = new HttpRequestMessage(HttpMethod.Delete, $"https://party-service-prod.ol.epicgames.com/party/api/v1/Fortnite/parties/{Party.PartyId}/members/{User.AccountId}");
         request.Headers.Add("Authorization", $"bearer {Session.AccessToken}");
@@ -170,7 +169,6 @@ public partial class FortniteClient {
         }
 
         Party = new(this, party);
-        XMPP.JoinMUC(Party);
     }
 
     #endregion

@@ -19,9 +19,12 @@ public class FortniteXMPP : IDisposable {
             Logging.Debug($"XMPP signed in! {e.Jid}");
             _ReadyTasks.ForEach(x => x.SetResult(true));
             _ReadyTasks.Clear();
+
+            SendPresence(new()); // if you dont you will be shown as offline ?
         };
 
         Connection.Presence += (XmppConnection sender, XMPPPresence e) => {
+            if (e is null) { Logging.Warn("XMPP presence is null!"); return; }
             Logging.Debug($"XMPP presence: {e.From} - {(e.Attribute("type")?.Value == "unavailable" ? "OFFLINE" : e.Value)}");
         };
 
@@ -97,15 +100,16 @@ public class FortniteXMPP : IDisposable {
                 }
                 case "com.epicgames.friends.core.apiobjects.BlockListEntryAdded": break;
                 case "com.epicgames.friends.core.apiobjects.BlockListEntryRemoved": break;
-                case "com.epicgames.social.party.notification.v0.PING": break;
+                case "com.epicgames.social.party.notification.v0.PING": {
+
+                    break;
+                }
                 case "com.epicgames.social.party.notification.v0.MEMBER_JOINED": {
                     var payload = JsonSerializer.Deserialize<FortnitePartyMemberJoinedPayload>(e.Text);
                     if (payload is null) {
                         Logging.Warn("XMPP message failed to deserialize to FortnitePartyMemberJoinedPayload");
                         return;
                     }
-
-                    if (payload.AccountId == Client.User.AccountId) Logging.Debug($"Joined party {payload.PartyId}");
 
                     if (Client.Party is null) {
                         Logging.Warn($"Joined party {payload.PartyId} but client party is NULL");
@@ -114,6 +118,10 @@ public class FortniteXMPP : IDisposable {
                     if (Client.Party.PartyId != payload.PartyId) {
                         Logging.Warn($"Joined party {payload.PartyId} but client party is {Client.Party.PartyId}");
                         return;
+                    }
+                    if (payload.AccountId == Client.User.AccountId) {
+                        Logging.Debug($"Joined party {payload.PartyId}");
+                        JoinMUC(Client.Party);
                     }
 
                     if (Client.Party.Members.Any(x => x.AccountId == payload.AccountId)) {
@@ -140,7 +148,7 @@ public class FortniteXMPP : IDisposable {
         };
 
         Connection.Element += (XmppConnection sender, ElementArgs e) => {
-            // Logging.Debug($"XMPP element {(e.IsInput ? "received" : "sent")}:\n{e.Stanza}");
+            Logging.Debug($"XMPP element {(e.IsInput ? "received" : "sent")}:\n{e.Stanza}");
         };
     }
 
@@ -165,6 +173,15 @@ public class FortniteXMPP : IDisposable {
         var presence = new XMPPPresence(Connection.Capabilities) { To = new($"Party-{party.PartyId}@muc.prod.ol.epicgames.com/{Client.User.DisplayName}:{Client.User.AccountId}:{Connection.Jid.Resource}") };
         presence.SetAttributeValue("type", "unavailable");
         presence.Add(new XElement(XNamespace.Get("http://jabber.org/protocol/muc") + "x"));
+        Connection.Send(presence);
+    }
+
+    public void SendPresence(FortnitePresence fortnitePresence, string? show = null, string type = "available") {
+        var presence = new XMPPPresence();
+        if (show is not null) presence.Add(new XElement(XNamespace.Get("jabber:client") + "show", show));
+        if (type is not null) presence.Add(new XElement(XNamespace.Get("jabber:client") + "type", type));
+        presence.Add(new XElement(XNamespace.Get("jabber:client") + "status", JsonSerializer.Serialize(fortnitePresence)));
+        presence.Add(new XElement(XNamespace.Get("urn:xmpp:delay") + "delay", new XAttribute("stamp", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"))));
         Connection.Send(presence);
     }
 
@@ -222,4 +239,12 @@ public class FortnitePartyMemberJoinedPayload {
 
 #endregion
 
-public class FortnitePresence {}
+public class FortnitePresence {
+    [K("Status")] public string Status { get; set; } = "Playing Battle Royale";
+    [K("bIsPlaying")] public bool IsPlaying { get; set; } = true;
+    [K("bIsJoinable")] public bool IsJoinable { get; set; } = false;
+    [K("bHasVoiceSupport")] public bool HasVoiceSupport { get; set; } = true;
+    [K("SessionId")] public string SessionId { get; set; } = "";
+    [K("ProductName")] public string? ProductName { get; set; } = "Fortnite";
+    [K("Properties")] public Dictionary<string, object> Properties { get; set; } = new();
+}

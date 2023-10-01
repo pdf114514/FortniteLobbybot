@@ -188,7 +188,7 @@ public class FortnitePartyMember {
         AccountId = data.AccountId;
         DisplayName = data.AccountDn;
         Connections = new() { new(data.Connection) };
-        Role = EFortnitePartyMemberRole.Member;
+        Role = EFortnitePartyMemberRole.Member; // How leader joins?
         JoinedAt = Utils.ConvertToDateTime(data.JoinedAt);
         UpdatedAt = Utils.ConvertToDateTime(data.UpdatedAt);
         Meta = new();
