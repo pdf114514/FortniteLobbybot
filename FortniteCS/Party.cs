@@ -183,7 +183,7 @@ public class FortnitePartyMember {
         Revision = data.Revision;
     }
 
-    public FortnitePartyMember(FortniteParty party, FortnitePartyMemberJoinedPayload data) {
+    public FortnitePartyMember(FortniteParty party, FortnitePartyMemberJoinedData data) {
         Party = party;
         AccountId = data.AccountId;
         DisplayName = data.AccountDn;

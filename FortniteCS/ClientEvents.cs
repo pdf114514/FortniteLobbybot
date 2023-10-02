@@ -67,7 +67,7 @@ public partial class FortniteClient {
 
     public event Action<FortnitePartyMember>? PartyMemberJoined;
     // public event Action<FortnitePartyMember>? PartyMemberUpdated;
-    // public event Action<FortnitePartyMember>? PartyMemberLeft;
+    public event Action<FortnitePartyMember>? PartyMemberLeft;
     // public event Action<FortnitePartyMember>? PartyMemberExpired;
     // public event Action<FortnitePartyMember>? PartyMemberKicked;
     // public event Action<FortnitePartyMember>? PartyMemberDisconnected;
@@ -156,7 +156,15 @@ public partial class FortniteClient {
 
     internal void OnPartyMemberJoined(FortnitePartyMember member) {
         Logging.Debug($"Party member joined {member.DisplayName}");
-        Party?.Members.Append(member);
+        Party?._Members.Append(member);
         PartyMemberJoined?.Invoke(member);
+    }
+
+    // PartyMemberUpdated
+
+    internal void OnPartyMemberLeft(FortnitePartyMember member) {
+        Logging.Debug($"Party member left {member.DisplayName}");
+        Party?._Members.Remove(member);
+        PartyMemberLeft?.Invoke(member);
     }
 }
