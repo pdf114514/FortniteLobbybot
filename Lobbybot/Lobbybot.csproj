@@ -9,6 +9,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FortniteCS\FortniteCS.csproj" />
+    <ProjectReference Include="..\Lobbybot.Client\Lobbybot.Client.csproj" />
+    <ProjectReference Include="..\Lobbybot.Server\Lobbybot.Server.csproj" />
+    <ProjectReference Include="..\Lobbybot.Shared\Lobbybot.Shared.csproj" />
   </ItemGroup>
 
 </Project>
