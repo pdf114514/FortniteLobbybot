@@ -105,7 +105,7 @@ public class FortniteXMPP : IDisposable {
                     break;
                 }
                 case "com.epicgames.social.party.notification.v0.MEMBER_JOINED": {
-                    var payload = JsonSerializer.Deserialize<FortnitePartyMemberJoinedPayload>(e.Text);
+                    var payload = JsonSerializer.Deserialize<FortnitePartyMemberJoinedData>(e.Text);
                     if (payload is null) {
                         Logging.Warn("XMPP message failed to deserialize to FortnitePartyMemberJoinedPayload");
                         return;
@@ -133,8 +133,46 @@ public class FortniteXMPP : IDisposable {
                     break;
                 }
                 case "com.epicgames.social.party.notification.v0.MEMBER_STATE_UPDATED": break;
-                case "com.epicgames.social.party.notification.v0.MEMBER_LEFT": break;
-                case "com.epicgames.social.party.notification.v0.MEMBER_EXPIRED": break;
+                case "com.epicgames.social.party.notification.v0.MEMBER_LEFT": {
+                    var payload = JsonSerializer.Deserialize<FortnitePartyMemberLeftData>(e.Text);
+                    if (payload is null) {
+                        Logging.Warn("XMPP message failed to deserialize to FortnitePartyMemberLeftPayload");
+                        return;
+                    }
+
+                    if (Client.Party is null) {
+                        Logging.Warn($"Left party {payload.PartyId} but client party is NULL");
+                        return;
+                    }
+
+                    if (Client.Party.PartyId != payload.PartyId) {
+                        Logging.Warn($"Left party {payload.PartyId} but client party is {Client.Party.PartyId}");
+                        return;
+                    }
+
+                    if (payload.AccountId == Client.User.AccountId) {
+                        Logging.Debug($"Left party {payload.PartyId}");
+                        LeaveMUC(Client.Party);
+                    }
+
+                    if (!Client.Party.Members.Any(x => x.AccountId == payload.AccountId)) {
+                        Logging.Warn($"Left party {payload.PartyId} but member {payload.AccountId} does not exist");
+                        return;
+                    }
+
+                    Client.OnPartyMemberLeft(Client.Party.Members.First(x => x.AccountId == payload.AccountId));
+                    break;
+                }
+                case "com.epicgames.social.party.notification.v0.MEMBER_EXPIRED": {
+                    var payload = JsonSerializer.Deserialize<FortnitePartyMemberExpiredData>(e.Text);
+                    if (payload is null) {
+                        Logging.Warn("XMPP message failed to deserialize to FortnitePartyMemberExpiredPayload");
+                        return;
+                    }
+
+                    Logging.Debug($"Party member {Client.Party?.Members.FirstOrDefault(x => x.AccountId == payload.AccountId)?.DisplayName ?? $"NULL({payload.AccountId})"} expired");
+                    break;
+                }
                 case "com.epicgames.social.party.notification.v0.MEMBER_KICKED": break;
                 case "com.epicgames.social.party.notification.v0.MEMBER_CONNECTED": break;
                 case "com.epicgames.social.party.notification.v0.MEMBER_DISCONNECTED": break;
@@ -148,7 +186,7 @@ public class FortniteXMPP : IDisposable {
         };
 
         Connection.Element += (XmppConnection sender, ElementArgs e) => {
-            Logging.Debug($"XMPP element {(e.IsInput ? "received" : "sent")}:\n{e.Stanza}");
+            // Logging.Debug($"XMPP element {(e.IsInput ? "received" : "sent")}:\n{e.Stanza}");
         };
     }
 
@@ -223,7 +261,11 @@ public class FortniteFriendRemovalPayload {
     [K("reason")] public required string Reason { get; init; }
 }
 
-public class FortnitePartyMemberJoinedPayload {
+#endregion
+
+#region Data
+
+public class FortnitePartyMemberJoinedData {
     [K("sent")] public required string Sent { get; init; }
     [K("type")] public required string Type { get; init; }
     [K("connection")] public required FortnitePartyMemberConnectionData Connection { get; init; }
@@ -235,6 +277,26 @@ public class FortnitePartyMemberJoinedPayload {
     [K("member_state_updated")] public required MetaDict MemberStateUpdated { get; init; }
     [K("joined_at")] public required string JoinedAt { get; init; }
     [K("updated_at")] public required string UpdatedAt { get; init; }
+}
+
+public class FortnitePartyMemberLeftData {
+    [K("sent")] public required string Sent { get; init; }
+    [K("type")] public required string Type { get; init; }
+    [K("revision")] public required int Revision { get; init; }
+    [K("ns")] public required string Ns { get; init; }
+    [K("party_id")] public required string PartyId { get; init; }
+    [K("account_id")] public required string AccountId { get; init; }
+    [K("member_state_updated")] public required MetaDict MemberStateUpdated { get; init; }
+}
+
+public class FortnitePartyMemberExpiredData {
+    [K("sent")] public required string Sent { get; init; }
+    [K("type")] public required string Type { get; init; }
+    [K("revision")] public required int Revision { get; init; }
+    [K("ns")] public required string Ns { get; init; }
+    [K("party_id")] public required string PartyId { get; init; }
+    [K("account_id")] public required string AccountId { get; init; }
+    [K("member_state_updated")] public required MetaDict MemberStateUpdated { get; init; }
 }
 
 #endregion
