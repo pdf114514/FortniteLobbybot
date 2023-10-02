@@ -11,8 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Client\Lobbybot.Client.csproj" />
-    <ProjectReference Include="..\Shared\Lobbybot.Shared.csproj" />
+    <ProjectReference Include="..\Lobbybot.Client\Lobbybot.Client.csproj" />
+    <ProjectReference Include="..\Lobbybot.Shared\Lobbybot.Shared.csproj" />
   </ItemGroup>
 
 

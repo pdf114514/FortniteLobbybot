@@ -2,11 +2,9 @@ using Microsoft.AspNetCore.ResponseCompression;
 
 namespace Lobbybot;
 
-public class Program
-{
-    public static void Main(string[] args)
-    {
-        var builder = WebApplication.CreateBuilder(args);
+public static class ServerProgram {
+    public static WebApplication CreateApp(string[]? args = null) {
+        var builder = WebApplication.CreateBuilder(args ?? Array.Empty<string>());
 
         // Add services to the container.
 
@@ -16,12 +14,9 @@ public class Program
         var app = builder.Build();
 
         // Configure the HTTP request pipeline.
-        if (app.Environment.IsDevelopment())
-        {
+        if (app.Environment.IsDevelopment()) {
             app.UseWebAssemblyDebugging();
-        }
-        else
-        {
+        } else {
             app.UseExceptionHandler("/Error");
             // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
             app.UseHsts();
@@ -39,6 +34,8 @@ public class Program
         app.MapControllers();
         app.MapFallbackToFile("index.html");
 
-        app.Run();
+        return app;
     }
+
+    public static void Main(string[] args) => CreateApp(args).Run();
 }
