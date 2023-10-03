@@ -16,6 +16,10 @@ public partial class FortniteClient : IDisposable {
     public ReadOnlyCollection<FortniteFriend> Friends => _Friends.AsReadOnly();
     private List<PendingFriend> _PendingFriends { get; } = new();
     public ReadOnlyCollection<PendingFriend> PendingFriends => _PendingFriends.AsReadOnly();
+
+    // invites
+    private List<FortnitePartyJoinRequest> _PartyJoinRequests { get; } = new();
+    public ReadOnlyCollection<FortnitePartyJoinRequest> PartyJoinRequests => _PartyJoinRequests.AsReadOnly();
     public FortniteClientParty? Party { get; private set; }
 
     public FortniteClient(AuthBase<FortniteAuthSession, FortniteAuthData> auth) {

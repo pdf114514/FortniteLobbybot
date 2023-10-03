@@ -62,7 +62,8 @@ public partial class FortniteClient {
     // public event Action<FortniteParty>? PartyUpdated;
     // public event Action<FortniteParty>? PartyMessage;
     // public event Action<FortniteParty>? PartyInvite;
-    // public event Action<FortniteParty>? PartyJoinRequest;
+    public event Action<FortnitePartyJoinRequest>? PartyJoinRequest;
+    public event Action<FortnitePartyJoinRequest>? PartyJoinRequestExpired;
     // public event Action<FortniteParty>? PartyJoinConfirmation;
 
     public event Action<FortnitePartyMember>? PartyMemberJoined;
@@ -151,7 +152,19 @@ public partial class FortniteClient {
     // PartyUpdated
     // PartyMessage
     // PartyInvite
-    // PartyJoinRequest
+
+    internal void OnPartyJoinRequest(FortnitePartyJoinRequest request) {
+        Logging.Debug($"Party join request from {request.AccountId}");
+        _PartyJoinRequests.Add(request);
+        PartyJoinRequest?.Invoke(request);
+    }
+
+    internal void OnPartyJoinRequestExpired(FortnitePartyJoinRequest request) {
+        Logging.Debug($"Party join request expired from {request.AccountId}");
+        _PartyJoinRequests.RemoveAll(x => x.AccountId == request.AccountId);
+        PartyJoinRequestExpired?.Invoke(request);
+    }
+
     // PartyJoinConfirmation
 
     internal void OnPartyMemberJoined(FortnitePartyMember member) {

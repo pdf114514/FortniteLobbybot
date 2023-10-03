@@ -257,3 +257,19 @@ public class FortniteClientParty : FortniteParty {
     public FortniteClientParty(FortniteClient client, FortnitePartyData data) : base(client, data) {}
     public FortniteClientParty(FortniteClient client, FortniteParty party) : base(client, party) {}
 }
+
+public class FortnitePartyJoinRequest {
+    public string PartyId { get; }
+    public string AccountId { get; }
+    public string DisplayName { get; }
+    public DateTime SentAt { get; }
+    public DateTime ExpiresAt { get; }
+
+    public FortnitePartyJoinRequest(FortniteIntentionData data) {
+        PartyId = data.PartyId;
+        AccountId = data.RequesterId;
+        DisplayName = data.RequesterDn;
+        SentAt = Utils.ConvertToDateTime(data.SentAt);
+        ExpiresAt = Utils.ConvertToDateTime(data.ExpiresAt);
+    }
+}
