@@ -18,8 +18,6 @@ public class Program {
             if (!File.Exists("deviceAuth.json")) {
                 File.WriteAllText("deviceAuth.json", JsonSerializer.Serialize(await client.Session.CreateDeviceAuth()));
             }
-            await ServerProgram.CreateApp().RunAsync();
-            // await Client.ClientProgram.CreateApp().RunAsync();
         };
         client.FriendRequestReceived += async friend => await client.AccpetFriendRequest(friend);
         client.PartyMemberJoined += member => Console.WriteLine($"{member.DisplayName} joined the party!");

@@ -101,7 +101,13 @@ public class FortniteXMPP : IDisposable {
                 case "com.epicgames.friends.core.apiobjects.BlockListEntryAdded": break;
                 case "com.epicgames.friends.core.apiobjects.BlockListEntryRemoved": break;
                 case "com.epicgames.social.party.notification.v0.PING": {
+                    var payload = JsonSerializer.Deserialize<FortnitePingData>(e.Text);
+                    if (payload is null) {
+                        Logging.Warn("XMPP message failed to deserialize to FortnitePingPayload");
+                        return;
+                    }
 
+                    Logging.Debug($"Ping from {payload.PingerDn}");
                     break;
                 }
                 case "com.epicgames.social.party.notification.v0.MEMBER_JOINED": {
@@ -179,7 +185,36 @@ public class FortniteXMPP : IDisposable {
                 case "com.epicgames.social.party.notification.v0.MEMBER_NEW_CAPTAIN": break;
                 case "com.epicgames.social.party.notification.v0.MEMBER_REQUIRE_CONFIRMATION": break;
                 case "com.epicgames.social.party.notification.v0.PARTY_UPDATED": break;
-                case "com.epicgames.social.party.notification.v0.INITIAL_INTENTION": break;
+                case "com.epicgames.social.party.notification.v0.INITIAL_INTENTION": {
+                    var payload = JsonSerializer.Deserialize<FortniteInitialIntentionData>(e.Text);
+                    if (payload is null) {
+                        Logging.Warn("XMPP message failed to deserialize to FortniteInitialIntentionPayload");
+                        return;
+                    }
+
+                    Client.OnPartyJoinRequest(new(payload));
+                    break;
+                }
+                case "com.epicgames.social.party.notification.v0.INTENTION_EXPIRED": {
+                    var payload = JsonSerializer.Deserialize<FortniteIntentionExpiredData>(e.Text);
+                    if (payload is null) {
+                        Logging.Warn("XMPP message failed to deserialize to FortniteIntentionExpiredPayload");
+                        return;
+                    }
+
+                    Client.OnPartyJoinRequestExpired(new(payload));
+                    break;
+                }
+                case "com.epicgames.social.party.notification.v0.INITIAL_INVITE": {
+                    var payload = JsonSerializer.Deserialize<FortniteInitialInviteData>(e.Text);
+                    if (payload is null) {
+                        Logging.Warn("XMPP message failed to deserialize to FortniteInitialInvitePayload");
+                        return;
+                    }
+
+                    Logging.Debug($"Initial invite from {payload.InviterDn}");
+                    break;
+                }
                 case "com.epicgames.social.party.notification.v0.INVITE_DECLINED": break;
                 default: Logging.Warn($"Unknown XMPP message type: {type}"); break;
             }
@@ -265,12 +300,15 @@ public class FortniteFriendRemovalPayload {
 
 #region Data
 
-public class FortnitePartyMemberJoinedData {
+public abstract class FortniteXMPPDataBase {
     [K("sent")] public required string Sent { get; init; }
     [K("type")] public required string Type { get; init; }
-    [K("connection")] public required FortnitePartyMemberConnectionData Connection { get; init; }
-    [K("revision")] public required int Revision { get; init; }
     [K("ns")] public required string Ns { get; init; } // Fortnite
+}
+
+public class FortnitePartyMemberJoinedData : FortniteXMPPDataBase {
+    [K("revision")] public required int Revision { get; init; }
+    [K("connection")] public required FortnitePartyMemberConnectionData Connection { get; init; }
     [K("party_id")] public required string PartyId { get; init; }
     [K("account_id")] public required string AccountId { get; init; }
     [K("account_dn")] public required string AccountDn { get; init; }
@@ -279,24 +317,50 @@ public class FortnitePartyMemberJoinedData {
     [K("updated_at")] public required string UpdatedAt { get; init; }
 }
 
-public class FortnitePartyMemberLeftData {
-    [K("sent")] public required string Sent { get; init; }
-    [K("type")] public required string Type { get; init; }
+public class FortnitePartyMemberLeftData : FortniteXMPPDataBase {
     [K("revision")] public required int Revision { get; init; }
-    [K("ns")] public required string Ns { get; init; }
     [K("party_id")] public required string PartyId { get; init; }
     [K("account_id")] public required string AccountId { get; init; }
     [K("member_state_updated")] public required MetaDict MemberStateUpdated { get; init; }
 }
 
-public class FortnitePartyMemberExpiredData {
-    [K("sent")] public required string Sent { get; init; }
-    [K("type")] public required string Type { get; init; }
+public class FortnitePartyMemberExpiredData : FortniteXMPPDataBase {
     [K("revision")] public required int Revision { get; init; }
-    [K("ns")] public required string Ns { get; init; }
     [K("party_id")] public required string PartyId { get; init; }
     [K("account_id")] public required string AccountId { get; init; }
     [K("member_state_updated")] public required MetaDict MemberStateUpdated { get; init; }
+}
+
+public class FortnitePingData : FortniteXMPPDataBase {
+    [K("pinger_id")] public required string PingerId { get; init; }
+    [K("pinger_dn")] public required string PingerDn { get; init; }
+    [K("expires")] public required string Expires { get; init; } // ExpiresAt
+    [K("meta")] public required MetaDict Meta { get; init; }
+}
+
+public class FortniteIntentionData : FortniteXMPPDataBase {
+    [K("party_id")] public required string PartyId { get; init; }
+    [K("requester_id")] public required string RequesterId { get; init; }
+    [K("requester_dn")] public required string RequesterDn { get; init; }
+    [K("requestee_id")] public required string RequesteeId { get; init; }
+    [K("sent_at")] public required string SentAt { get; init; }
+    [K("expires_at")] public required string ExpiresAt { get; init; }
+    [K("meta")] public required MetaDict Meta { get; init; } // {"urn:epic:invite:platformdata_s": "RequestToJoin"}
+}
+
+public class FortniteInitialIntentionData : FortniteIntentionData {}
+public class FortniteIntentionExpiredData : FortniteIntentionData {}
+
+public class FortniteInitialInviteData : FortniteXMPPDataBase {
+    [K("meta")] public required MetaDict Meta { get; init; }
+    [K("party_id")] public required string PartyId { get; init; }
+    [K("inviter_id")] public required string InviterId { get; init; }
+    [K("inviter_dn")] public required string InviterDn { get; init; }
+    [K("invitee_id")] public required string InviteeId { get; init; }
+    [K("sent_at")] public required string SentAt { get; init; }
+    [K("updated_at")] public required string UpdatedAt { get; init; }
+    [K("friend_ids")] public required List<string> FriendIds { get; init; }
+    [K("members_count")] public required int MembersCount { get; init; }
 }
 
 #endregion
