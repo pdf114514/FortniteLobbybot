@@ -171,5 +171,65 @@ public partial class FortniteClient {
         Party = new(this, party);
     }
 
+    public async Task<List<FortniteParty>> GetPartiesByPingerId(string pingerId) {
+        var request = new HttpRequestMessage(HttpMethod.Get, $"https://party-service-prod.ol.epicgames.com/party/api/v1/Fortnite/user/{User.AccountId}/pings/{pingerId}/parties");
+        request.Headers.Add("Authorization", $"bearer {Session.AccessToken}");
+        var response = await Http.SendAsync(request);
+        if (response.StatusCode != HttpStatusCode.OK) throw new Exception($"Failed to get parties! {await response.Content.ReadAsStringAsync()}");
+        var json = await response.Content.ReadAsStringAsync();
+        return (JsonSerializer.Deserialize<List<FortnitePartyData>>(json) ?? throw new Exception("Failed to deserialize json!")).Select(x => new FortniteParty(this, x)).ToList();
+    }
+
+    public async Task JoinParty(FortniteParty party) {
+        PartyLock.Wait();
+        if (Party is not null) await LeaveParty(false);
+        try {
+            var request = new HttpRequestMessage(HttpMethod.Post, $"https://party-service-prod.ol.epicgames.com/party/api/v1/Fortnite/parties/{party.PartyId}/members/{User.AccountId}/join");
+            request.Headers.Add("Authorization", $"bearer {Session.AccessToken}");
+            request.Content = new StringContent(JsonSerializer.Serialize(new {
+                connection = new {
+                    id = XMPP.Connection.Jid.FullJid,
+                    meta = new MetaDict {
+                        ["urn:epic:conn:platform_s"] = Config.Platform,
+                        ["urn:epic:conn:type_s"] = "game",
+                    },
+                    yield_leadership = true
+                },
+                meta = new MetaDict {
+                    ["urn:epic:member:dn_s"] = User.DisplayName,
+                    ["urn:epic:member:joinrequestusers_j"] = JsonSerializer.Serialize(new Dictionary<string, object>() {
+                        ["users"] = new List<object>() {
+                            new {
+                                id = User.AccountId,
+                                dn = User.DisplayName,
+                                plat = Config.Platform,
+                                data = JsonSerializer.Serialize(new {
+                                    CrossplayPreference = "1",
+                                    SubGame_u = "1",
+                                })
+                            }
+                        }
+                    })
+                }
+            }), Encoding.UTF8, "application/json");
+        } catch {
+            await InitializeParty(true, false);
+            throw;
+        } finally {
+            PartyLock.Release();
+        }
+
+        Party = new(this, party);
+    }
+
+    public async Task AcceptInvite(FortnitePartyInvite invite) {
+        await JoinParty((await GetPartiesByPingerId(invite.SentBy)).First());
+
+        var request = new HttpRequestMessage(HttpMethod.Delete, $"https://party-service-prod.ol.epicgames.com/party/api/v1/Fortnite/user/{User.AccountId}/pings/{invite.SentBy}");
+        request.Headers.Add("Authorization", $"bearer {Session.AccessToken}");
+        var response = await Http.SendAsync(request);
+        if (!response.IsSuccessStatusCode) Logging.Warn($"Failed to accept invite! {response.StatusCode}");
+    }
+
     #endregion
 }
