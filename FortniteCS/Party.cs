@@ -129,6 +129,17 @@ public class FortnitePartyMemberData {
     [K("role")] public required string Role { get; init; }
 }
 
+public class FortnitePartyInviteData {
+    [K("party_id")] public required string PartyId { get; init; }
+    [K("sent_by")] public required string SentBy { get; init; }
+    [K("meta")] public required MetaDict Meta { get; init; }
+    [K("sent_to")] public required string SentTo { get; init; }
+    [K("sent_at")] public required string SentAt { get; init; }
+    [K("updated_at")] public required string UpdatedAt { get; init; }
+    [K("expires_at")] public required string ExpiresAt { get; init; }
+    [K("status")] public required string Status { get; init; }
+}
+
 public class FortnitePartyData {
     [K("id")] public required string Id { get; init; }
     [K("created_at")] public required string CreatedAt { get; init; }
@@ -136,10 +147,9 @@ public class FortnitePartyData {
     [K("config")] public required FortnitePartyConfigData Config { get; init; }
     [K("members")] public required List<FortnitePartyMemberData> Members { get; init; }
     [K("meta")] public required MetaDict Meta { get; init; }
-    [K("invites")] public required List<object> Invites { get; init; }
+    [K("invites")] public required List<FortnitePartyInviteData> Invites { get; init; }
     [K("revision")] public required int Revision { get; init; }
     // applicants
-    // invites
     // intentions
 }
 
@@ -202,15 +212,39 @@ public class FortniteClientPartyMember : FortnitePartyMember {
     public FortniteClientPartyMember(FortniteParty party, FortnitePartyMemberData data) : base(party, data) {}
 }
 
+// make sent and received one
+public class FortnitePartyInvite {
+    public string PartyId { get; }
+    public string SentBy { get; }
+    public MetaDict Meta { get; }
+    public string SentTo { get; }
+    public DateTime SentAt { get; }
+    public DateTime UpdatedAt { get; }
+    public DateTime ExpiresAt { get; }
+    public string Status { get; }
+
+    public FortnitePartyInvite(FortnitePartyInviteData data) {
+        PartyId = data.PartyId;
+        SentBy = data.SentBy;
+        Meta = data.Meta;
+        SentTo = data.SentTo;
+        SentAt = Utils.ConvertToDateTime(data.SentAt);
+        UpdatedAt = Utils.ConvertToDateTime(data.UpdatedAt);
+        ExpiresAt = Utils.ConvertToDateTime(data.ExpiresAt);
+        Status = data.Status;
+    }
+}
+
 public class FortniteParty {
     public FortniteClient Client { get; }
     public string PartyId { get; }
     public DateTime CreatedAt { get; }
     public FortnitePartyConfigData Config { get; }
-    public PartyPrivacy Privary { get; }
+    public PartyPrivacy Privacy { get; }
     internal List<FortnitePartyMember> _Members { get; }
     public ReadOnlyCollection<FortnitePartyMember> Members { get; }
     public MetaDict Meta { get; }
+    public List<FortnitePartyInvite> Invites { get; }
     public int Revision { get; }
 
     public FortniteParty(FortniteClient client, FortnitePartyData data) {
@@ -218,7 +252,7 @@ public class FortniteParty {
         PartyId = data.Id;
         CreatedAt = Utils.ConvertToDateTime(data.CreatedAt);
         Config = data.Config;
-        Privary = new() {
+        Privacy = new() {
             PartyType = data.Config.Type,
             InviteRestriction = data.Config.SubType,
             OnlyLeaderFriendsCanJoin = data.Config.JoinConfirmation,
@@ -230,6 +264,7 @@ public class FortniteParty {
         foreach (var member in data.Members) _Members.Add(new(this, member));
         Members = _Members.AsReadOnly();
         Meta = data.Meta;
+        Invites = data.Invites.Select(x => new FortnitePartyInvite(x)).ToList();
         Revision = data.Revision;
     }
 
@@ -238,7 +273,7 @@ public class FortniteParty {
         PartyId = party.PartyId;
         CreatedAt = party.CreatedAt;
         Config = party.Config;
-        Privary = party.Privary;
+        Privacy = party.Privacy;
         _Members = new();
         foreach (var member in party.Members) {
             member.Party = this;
@@ -246,6 +281,7 @@ public class FortniteParty {
         }
         Members = _Members.AsReadOnly();
         Meta = party.Meta;
+        Invites = party.Invites;
         Revision = party.Revision;
     }
 

@@ -107,7 +107,24 @@ public class FortniteXMPP : IDisposable {
                         return;
                     }
 
-                    Logging.Debug($"Ping from {payload.PingerDn}");
+                    var party = (await Client.GetPartiesByPingerId(payload.PingerId)).FirstOrDefault();
+                    if (party is null) {
+                        Logging.Warn($"Failed to get party by pinger id {payload.PingerId}");
+                        return;
+                    }
+
+                    var invite = party.Invites.FirstOrDefault(x => x.SentBy == payload.PingerId) ?? new(new() {
+                        ExpiresAt = payload.Expires,
+                        Meta = payload.Meta,
+                        SentBy = payload.PingerId,
+                        SentTo = Client.User.AccountId,
+                        SentAt = payload.Sent,
+                        PartyId = party.PartyId,
+                        Status = "SENT",
+                        UpdatedAt = payload.Sent
+                    });
+
+                    Client.OnPartyInvite(invite);
                     break;
                 }
                 case "com.epicgames.social.party.notification.v0.MEMBER_JOINED": {
@@ -359,7 +376,7 @@ public class FortniteInitialInviteData : FortniteXMPPDataBase {
     [K("invitee_id")] public required string InviteeId { get; init; }
     [K("sent_at")] public required string SentAt { get; init; }
     [K("updated_at")] public required string UpdatedAt { get; init; }
-    [K("friend_ids")] public required List<string> FriendIds { get; init; }
+    [K("friends_ids")] public required List<string> FriendsIds { get; init; }
     [K("members_count")] public required int MembersCount { get; init; }
 }
 

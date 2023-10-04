@@ -20,7 +20,9 @@ public class Program {
             }
         };
         client.FriendRequestReceived += async friend => await client.AccpetFriendRequest(friend);
+        client.PartyInvite += async invite => await client.AcceptInvite(invite); // doesnt work :/
         client.PartyMemberJoined += member => Console.WriteLine($"{member.DisplayName} joined the party!");
+        client.PartyMemberLeft += member => Console.WriteLine($"{member.DisplayName} left the party!");
         client.Start().Wait();
         Console.WriteLine("Press enter to exit");
         Console.ReadLine();
