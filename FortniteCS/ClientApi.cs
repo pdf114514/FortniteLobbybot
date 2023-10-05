@@ -181,8 +181,9 @@ public partial class FortniteClient {
     }
 
     public async Task JoinParty(FortniteParty party) {
-        PartyLock.Wait();
         if (Party is not null) await LeaveParty(false);
+        await PartyLock.WaitAsync();
+        Logging.Debug($"Joining party {party.PartyId}");
         try {
             var request = new HttpRequestMessage(HttpMethod.Post, $"https://party-service-prod.ol.epicgames.com/party/api/v1/Fortnite/parties/{party.PartyId}/members/{User.AccountId}/join");
             request.Headers.Add("Authorization", $"bearer {Session.AccessToken}");
@@ -193,7 +194,7 @@ public partial class FortniteClient {
                         ["urn:epic:conn:platform_s"] = Config.Platform,
                         ["urn:epic:conn:type_s"] = "game",
                     },
-                    yield_leadership = true
+                    yield_leadership = false
                 },
                 meta = new MetaDict {
                     ["urn:epic:member:dn_s"] = User.DisplayName,
@@ -214,12 +215,12 @@ public partial class FortniteClient {
             }), Encoding.UTF8, "application/json");
         } catch {
             await InitializeParty(true, false);
-            throw;
-        } finally {
             PartyLock.Release();
+            throw;
         }
 
         Party = new(this, party);
+        PartyLock.Release();
     }
 
     public async Task AcceptInvite(FortnitePartyInvite invite) {
