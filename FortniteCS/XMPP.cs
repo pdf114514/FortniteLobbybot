@@ -168,14 +168,14 @@ public class FortniteXMPP : IDisposable {
                         return;
                     }
 
-                    if (Client.Party.PartyId != payload.PartyId) {
-                        Logging.Warn($"Left party {payload.PartyId} but client party is {Client.Party.PartyId}");
-                        return;
-                    }
-
                     if (payload.AccountId == Client.User.AccountId) {
                         Logging.Debug($"Left party {payload.PartyId}");
                         LeaveMUC(Client.Party);
+                    }
+
+                    if (Client.Party.PartyId != payload.PartyId) {
+                        Logging.Warn($"Left party {payload.PartyId} but client party is {Client.Party.PartyId}");
+                        return;
                     }
 
                     if (!Client.Party.Members.Any(x => x.AccountId == payload.AccountId)) {
@@ -251,6 +251,7 @@ public class FortniteXMPP : IDisposable {
     }
 
     public void JoinMUC(FortniteParty party) { // TODO support password
+        Logging.Debug($"Joining MUC {party.PartyId}");
         var presence = new XMPPPresence(Connection.Capabilities) { To = new($"Party-{party.PartyId}@muc.prod.ol.epicgames.com/{Client.User.DisplayName}:{Client.User.AccountId}:{Connection.Jid.Resource}") };
         var xElement = new XElement(XNamespace.Get("http://jabber.org/protocol/muc") + "x");
         // if (password thing is present) xElement.Add(new XElement(XNamespace.Get("http://jabber.org/protocol/muc") + "password", password));
@@ -260,6 +261,7 @@ public class FortniteXMPP : IDisposable {
     }
 
     public void LeaveMUC(FortniteParty party) {
+        Logging.Debug($"Leaving MUC {party.PartyId}");
         var presence = new XMPPPresence(Connection.Capabilities) { To = new($"Party-{party.PartyId}@muc.prod.ol.epicgames.com/{Client.User.DisplayName}:{Client.User.AccountId}:{Connection.Jid.Resource}") };
         presence.SetAttributeValue("type", "unavailable");
         presence.Add(new XElement(XNamespace.Get("http://jabber.org/protocol/muc") + "x"));
