@@ -144,7 +144,7 @@ public class FortniteXMPP : IDisposable {
                     }
                     if (payload.AccountId == Client.User.AccountId) {
                         Logging.Debug($"Joined party {payload.PartyId}");
-                        JoinMUC(Client.Party);
+                        JoinMUC(payload.PartyId);
                     }
 
                     if (Client.Party.Members.Any(x => x.AccountId == payload.AccountId)) {
@@ -170,7 +170,7 @@ public class FortniteXMPP : IDisposable {
 
                     if (payload.AccountId == Client.User.AccountId) {
                         Logging.Debug($"Left party {payload.PartyId}");
-                        LeaveMUC(Client.Party);
+                        LeaveMUC(payload.PartyId);
                     }
 
                     if (Client.Party.PartyId != payload.PartyId) {
@@ -238,7 +238,7 @@ public class FortniteXMPP : IDisposable {
         };
 
         Connection.Element += (XmppConnection sender, ElementArgs e) => {
-            // Logging.Debug($"XMPP element {(e.IsInput ? "received" : "sent")}:\n{e.Stanza}");
+            Logging.Debug($"XMPP element {(e.IsInput ? "received" : "sent")}:\n{e.Stanza}");
         };
     }
 
@@ -250,9 +250,10 @@ public class FortniteXMPP : IDisposable {
         return tcs.Task;
     }
 
-    public void JoinMUC(FortniteParty party) { // TODO support password
-        Logging.Debug($"Joining MUC {party.PartyId}");
-        var presence = new XMPPPresence(Connection.Capabilities) { To = new($"Party-{party.PartyId}@muc.prod.ol.epicgames.com/{Client.User.DisplayName}:{Client.User.AccountId}:{Connection.Jid.Resource}") };
+    public void JoinMUC(FortniteParty party) => JoinMUC(party.PartyId);
+    public void JoinMUC(string partyId) { // TODO support password
+        Logging.Debug($"Joining MUC {partyId}");
+        var presence = new XMPPPresence(Connection.Capabilities) { To = new($"Party-{partyId}@muc.prod.ol.epicgames.com/{Client.User.DisplayName}:{Client.User.AccountId}:{Connection.Jid.Resource}") };
         var xElement = new XElement(XNamespace.Get("http://jabber.org/protocol/muc") + "x");
         // if (password thing is present) xElement.Add(new XElement(XNamespace.Get("http://jabber.org/protocol/muc") + "password", password));
 
@@ -260,9 +261,10 @@ public class FortniteXMPP : IDisposable {
         Connection.Send(presence);
     }
 
-    public void LeaveMUC(FortniteParty party) {
-        Logging.Debug($"Leaving MUC {party.PartyId}");
-        var presence = new XMPPPresence(Connection.Capabilities) { To = new($"Party-{party.PartyId}@muc.prod.ol.epicgames.com/{Client.User.DisplayName}:{Client.User.AccountId}:{Connection.Jid.Resource}") };
+    public void LeaveMUC(FortniteClientParty party) => LeaveMUC(party.PartyId);
+    public void LeaveMUC(string partyId) {
+        Logging.Debug($"Leaving MUC {partyId}");
+        var presence = new XMPPPresence(Connection.Capabilities) { To = new($"Party-{partyId}@muc.prod.ol.epicgames.com/{Client.User.DisplayName}:{Client.User.AccountId}:{Connection.Jid.Resource}") };
         presence.SetAttributeValue("type", "unavailable");
         presence.Add(new XElement(XNamespace.Get("http://jabber.org/protocol/muc") + "x"));
         Connection.Send(presence);
@@ -275,6 +277,17 @@ public class FortniteXMPP : IDisposable {
         presence.Add(new XElement(XNamespace.Get("jabber:client") + "status", JsonSerializer.Serialize(fortnitePresence)));
         presence.Add(new XElement(XNamespace.Get("urn:xmpp:delay") + "delay", new XAttribute("stamp", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"))));
         Connection.Send(presence);
+    }
+
+    public void SendMessage(string partyId, string messageString) {
+        var message = new XMPPMessage() {
+            To = new($"Party-{partyId}@muc.prod.ol.epicgames.com/{Client.User.DisplayName}:{Client.User.AccountId}:{Connection.Jid.Resource}"),
+            Text = messageString
+        };
+        // message.SetAttributeValue("from", Connection.Jid.FullJid);
+        message.SetAttributeValue("id", Guid.NewGuid().ToString("N"));
+        message.SetAttributeValue("type", "groupchat");
+        Connection.Send(message);
     }
 
     public void Dispose() {
@@ -344,6 +357,13 @@ public class FortnitePartyMemberLeftData : FortniteXMPPDataBase {
 }
 
 public class FortnitePartyMemberExpiredData : FortniteXMPPDataBase {
+    [K("revision")] public required int Revision { get; init; }
+    [K("party_id")] public required string PartyId { get; init; }
+    [K("account_id")] public required string AccountId { get; init; }
+    [K("member_state_updated")] public required MetaDict MemberStateUpdated { get; init; }
+}
+
+public class FortnitePartyMemberKickedData : FortniteXMPPDataBase {
     [K("revision")] public required int Revision { get; init; }
     [K("party_id")] public required string PartyId { get; init; }
     [K("account_id")] public required string AccountId { get; init; }

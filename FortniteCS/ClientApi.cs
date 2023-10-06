@@ -213,6 +213,11 @@ public partial class FortniteClient {
                     })
                 }
             }), Encoding.UTF8, "application/json");
+            var response = await Http.SendAsync(request);
+            if (!response.IsSuccessStatusCode) {
+                Logging.Error($"Failed to join party! {await response.Content.ReadAsStringAsync()}");
+                throw new Exception($"Failed to join party! {response.StatusCode}");
+            }
         } catch {
             await InitializeParty(true, false);
             PartyLock.Release();
