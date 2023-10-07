@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 namespace FortniteCS;
 
 public partial class FortniteClient : IDisposable {
-    private HttpClient Http { get; init; } = new();
+    internal HttpClient Http { get; init; } = new();
     public ForntiteConfig Config { get; init; } = new();
 
     private AuthBase<FortniteAuthSession, FortniteAuthData> Auth { get; init; }

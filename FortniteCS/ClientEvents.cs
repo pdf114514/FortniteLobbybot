@@ -2,14 +2,14 @@ using System.Reflection;
 
 namespace FortniteCS;
 
-public enum FortniteClientEvents {
+public enum FortniteClientEvent {
     Ready,
 
     FriendMessage,
     FriendPresence,
     FriendOnline,
     FriendOffline,
-    FriendRemoved, // Fired when you removed a friend? not friend removed you
+    FriendRemoved,
     FriendRequestReceived,
     FriendRequestSent,
     FriendRequestCancelled,
@@ -38,9 +38,9 @@ public enum FortniteClientEvents {
 }
 
 public class FortniteClientEventAttribute : Attribute {
-    public FortniteClientEvents Event { get; }
+    public FortniteClientEvent Event { get; }
 
-    public FortniteClientEventAttribute(FortniteClientEvents @event) {
+    public FortniteClientEventAttribute(FortniteClientEvent @event) {
         Event = @event;
     }
 }
@@ -67,7 +67,7 @@ public partial class FortniteClient {
     // public event Action<FortniteParty>? PartyJoinConfirmation;
 
     public event Action<FortnitePartyMember>? PartyMemberJoined;
-    // public event Action<FortnitePartyMember>? PartyMemberUpdated;
+    public event Action<FortnitePartyMember>? PartyMemberUpdated;
     public event Action<FortnitePartyMember>? PartyMemberLeft;
     // public event Action<FortnitePartyMember>? PartyMemberExpired;
     // public event Action<FortnitePartyMember>? PartyMemberKicked;
@@ -88,7 +88,7 @@ public partial class FortniteClient {
             if (method.GetCustomAttribute<FortniteClientEventAttribute>() is var attribute && attribute is not null) {
                 var @eventName = attribute.Event;
                 if (t.GetEvent(@eventName.ToString()) is var @event && @event is null) {
-                    Logging.Debug($"Event {@event} does not exist!");
+                    Logging.Debug($"Event {@eventName} does not exist!");
                     continue;
                 }
                 var @delegate = Delegate.CreateDelegate(@event.EventHandlerType!, this, method);
@@ -102,7 +102,27 @@ public partial class FortniteClient {
         }
     }
 
-    [FortniteClientEvent(FortniteClientEvents.Ready)]
+    internal async Task WaitForEvent<T>(FortniteClientEvent eventName, Predicate<T> condition, TimeSpan? timeout = null) {
+        var @event = GetType().GetEvent(eventName.ToString());
+        if (@event is null) {
+            throw new Exception($"Event {@eventName} does not exist!");
+        }
+        var tcs = new TaskCompletionSource<T>();
+        void handler(T obj) {
+            if (condition(obj)) {
+                @event.RemoveEventHandler(this, handler);
+                tcs.SetResult(obj);
+            }
+        }
+        @event.AddEventHandler(this, handler);
+        var task = tcs.Task;
+        if (timeout is not null) {
+            await Task.WhenAny(task, Task.Delay(timeout.Value));
+        }
+        await task;
+    }
+
+    [FortniteClientEvent(FortniteClientEvent.Ready)]
     internal void OnReady() {
         Logging.Debug("Client is ready");
     }
@@ -178,7 +198,10 @@ public partial class FortniteClient {
         PartyMemberJoined?.Invoke(member);
     }
 
-    // PartyMemberUpdated
+    internal void OnPartyMemberUpdated(FortnitePartyMember member) {
+        Logging.Debug($"Party member updated {member.DisplayName}");
+        PartyMemberUpdated?.Invoke(member);
+    }
 
     internal void OnPartyMemberLeft(FortnitePartyMember member) {
         Logging.Debug($"Party member left {member.DisplayName}");

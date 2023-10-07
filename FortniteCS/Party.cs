@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Text;
+using System.Text.Json;
 
 namespace FortniteCS;
 
@@ -100,6 +102,13 @@ public class PartyOptions {
     public bool ChatEnabled { get; set; } = true;
 }
 
+public class FortnitePartyMemberMeta : MetaDict {
+    public string? Outfit { get => JsonSerializer.Deserialize<JsonElement>(this.GetValueOrDefault("Default:AthenaCosmeticLoadout_j") ?? "{}").GetProperty("AthenaCosmeticLoadout").GetProperty("characterDef").GetString(); }
+
+    public FortnitePartyMemberMeta() : base() {}
+    public FortnitePartyMemberMeta(MetaDict meta) : base(meta) {}
+}
+
 public class FortnitePartyConfigData {
     [K("type")] public required string Type { get; init; }
     [K("joinability")] public required string Joinability { get; init; }
@@ -177,7 +186,7 @@ public class FortnitePartyMember {
     public string Role { get; internal set; }
     public DateTime JoinedAt { get; set; }
     public DateTime UpdatedAt { get; internal set; }
-    public MetaDict Meta { get; }
+    public FortnitePartyMemberMeta Meta { get; }
     public int Revision { get; internal set; }
     public bool ReceivedIninitalStateUpdate { get; internal set; }
 
@@ -189,7 +198,7 @@ public class FortnitePartyMember {
         Role = data.Role;
         JoinedAt = Utils.ConvertToDateTime(data.JoinedAt);
         UpdatedAt = Utils.ConvertToDateTime(data.UpdatedAt);
-        Meta = data.Meta;
+        Meta = new(data.Meta);
         Revision = data.Revision;
     }
 
@@ -210,6 +219,20 @@ public class FortnitePartyMember {
 
 public class FortniteClientPartyMember : FortnitePartyMember {
     public FortniteClientPartyMember(FortniteParty party, FortnitePartyMemberData data) : base(party, data) {}
+    public FortniteClientPartyMember(FortniteParty party, FortnitePartyMemberJoinedData data) : base(party, data) {}
+
+    public async void SendPatch(MetaDict updated) {
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"https://party-service-prod.ol.epicgames.com/party/api/v1/Fortnite/parties/{Party.PartyId}/members/{AccountId}/meta");
+        request.Headers.Add("Authorization", $"bearer {Party.Client.Session.AccessToken}");
+        request.Content = new StringContent(JsonSerializer.Serialize(new {
+            delete = new List<string>(),
+            revision = Revision,
+            update = updated,
+        }), Encoding.UTF8, "application/json");
+        var response = await Party.Client.Http.SendAsync(request);
+        if (!response.IsSuccessStatusCode) throw new Exception($"Failed to send patch: {response.StatusCode}");
+        Revision++;
+    }
 }
 
 // make sent and received one
@@ -242,7 +265,7 @@ public class FortniteParty {
     public FortnitePartyConfigData Config { get; }
     public PartyPrivacy Privacy { get; }
     internal List<FortnitePartyMember> _Members { get; }
-    public ReadOnlyCollection<FortnitePartyMember> Members { get; }
+    public ReadOnlyDictionary<string, FortnitePartyMember> Members => _Members.ToDictionary(x => x.AccountId, x => x).AsReadOnly();
     public MetaDict Meta { get; }
     public List<FortnitePartyInvite> Invites { get; }
     public int Revision { get; }
@@ -262,7 +285,6 @@ public class FortniteParty {
         };
         _Members = new();
         foreach (var member in data.Members) _Members.Add(new(this, member));
-        Members = _Members.AsReadOnly();
         Meta = data.Meta;
         Invites = data.Invites.Select(x => new FortnitePartyInvite(x)).ToList();
         Revision = data.Revision;
@@ -275,11 +297,10 @@ public class FortniteParty {
         Config = party.Config;
         Privacy = party.Privacy;
         _Members = new();
-        foreach (var member in party.Members) {
+        foreach (var member in party._Members) {
             member.Party = this;
             _Members.Add(member);
         }
-        Members = _Members.AsReadOnly();
         Meta = party.Meta;
         Invites = party.Invites;
         Revision = party.Revision;
