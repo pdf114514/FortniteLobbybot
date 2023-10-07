@@ -241,14 +241,57 @@ public class FortniteXMPP : IDisposable {
                         return;
                     }
 
-                    Logging.Debug($"Party member {Client.Party?.Members.GetValueOrDefault(payload.AccountId)?.DisplayName ?? $"NULL({payload.AccountId})"} expired");
+                    if (Client.Party?.Members.GetValueOrDefault(payload.AccountId) is var member && member is null) {
+                        Logging.Warn($"Party member ${payload.AccountId} does not exist!");
+                        return;
+                    }
+
+                    Client.OnPartyMemberExpired(member);
                     break;
                 }
-                case "com.epicgames.social.party.notification.v0.MEMBER_KICKED": break;
+                case "com.epicgames.social.party.notification.v0.MEMBER_KICKED": {
+                    var payload = JsonSerializer.Deserialize<FortnitePartyMemberKickedData>(e.Text);
+                    if (payload is null) {
+                        Logging.Warn("XMPP message failed to deserialize to FortnitePartyMemberKickedPayload");
+                        return;
+                    }
+
+                    if (Client.Party?.Members.GetValueOrDefault(payload.AccountId) is var member && member is null) {
+                        Logging.Warn($"Party member ${payload.AccountId} does not exist!");
+                        return;
+                    }
+
+                    if (member.AccountId == Client.User.AccountId) {
+                        Logging.Debug($"Kicked from party {payload.PartyId}");
+                        LeaveMUC(payload.PartyId);
+                        await Client.InitializeParty(true, false);
+                    }
+
+                    Client.OnPartyMemberKicked(member);
+                    break;
+                }
                 case "com.epicgames.social.party.notification.v0.MEMBER_CONNECTED": break;
                 case "com.epicgames.social.party.notification.v0.MEMBER_DISCONNECTED": break;
                 case "com.epicgames.social.party.notification.v0.MEMBER_NEW_CAPTAIN": break;
-                case "com.epicgames.social.party.notification.v0.MEMBER_REQUIRE_CONFIRMATION": break;
+                case "com.epicgames.social.party.notification.v0.MEMBER_REQUIRE_CONFIRMATION": {
+                    var payload = JsonSerializer.Deserialize<FortnitePartyMemberRequireConfirmationData>(e.Text);
+                    if (payload is null) {
+                        Logging.Warn("XMPP message failed to deserialize to FortnitePartyMemberRequireConfirmationPayload");
+                        return;
+                    }
+
+                    if (Client.Party is null) {
+                        Logging.Warn($"Party {payload.PartyId} requires confirmation but client party is NULL");
+                        return;
+                    }
+                    if (Client.Party.PartyId != payload.PartyId) {
+                        Logging.Warn($"Party {payload.PartyId} requires confirmation but client party is {Client.Party.PartyId}");
+                        return;
+                    }
+
+                    Client.OnPartyJoinConfirmation(new(payload));
+                    break;
+                }
                 case "com.epicgames.social.party.notification.v0.PARTY_UPDATED": break;
                 case "com.epicgames.social.party.notification.v0.INITIAL_INTENTION": {
                     var payload = JsonSerializer.Deserialize<FortniteInitialIntentionData>(e.Text);
@@ -427,6 +470,17 @@ public class FortnitePartyMemberKickedData : FortniteXMPPDataBase {
     [K("party_id")] public required string PartyId { get; init; }
     [K("account_id")] public required string AccountId { get; init; }
     [K("member_state_updated")] public required MetaDict MemberStateUpdated { get; init; }
+}
+
+public class FortnitePartyMemberRequireConfirmationData : FortniteXMPPDataBase {
+    [K("revision")] public required int Revision { get; init; }
+    [K("party_id")] public required string PartyId { get; init; }
+    [K("account_id")] public required string AccountId { get; init; }
+    [K("account_dn")] public required string AccountDn { get; init; }
+    [K("member_state_updated")] public required MetaDict MemberStateUpdated { get; init; }
+    [K("connection")] public required FortnitePartyMemberConnectionData Connection { get; init; }
+    [K("joined_at")] public required string JoinedAt { get; init; }
+    [K("updated_at")] public required string UpdatedAt { get; init; }
 }
 
 public class FortnitePingData : FortniteXMPPDataBase {

@@ -237,5 +237,57 @@ public partial class FortniteClient {
         if (!response.IsSuccessStatusCode) Logging.Warn($"Failed to accept invite! {response.StatusCode}");
     }
 
+    public async Task AcceptJoinRequest(FortnitePartyJoinRequest joinRequest) {
+        // todo member duplicate and party full check
+        if (Party is null) throw new Exception("Not in a party!");
+        if (Party.Privacy.PartyType == EFortnitePartyType.Private) {
+            var request = new HttpRequestMessage(HttpMethod.Post, $"https://party-service-prod.ol.epicgames.com/party/api/v1/Fortnite/parties/{Party.PartyId}/invites/{joinRequest.AccountId}?sendPing=true");
+            request.Headers.Add("Authorization", $"bearer {Session.AccessToken}");
+            request.Content = new StringContent(JsonSerializer.Serialize(new MetaDict {
+                ["urn:epic:cfg:build-id_s"] = "1:3:",
+                ["urn:epic:conn:platform_s"] = Config.Platform,
+                ["urn:epic:conn:type_s"] = "game",
+                ["urn:epic:invite:platformdata_s"] = "",
+                ["urn:epic:member:dn_s"] = User.DisplayName
+            }), Encoding.UTF8, "application/json");
+            var response = await Http.SendAsync(request);
+            if (!response.IsSuccessStatusCode) Logging.Warn($"Failed to accept party join request! {response.StatusCode}");
+        } else {
+            var request = new HttpRequestMessage(HttpMethod.Post, $"https://party-service-prod.ol.epicgames.com/party/api/v1/Fortnite/user/{joinRequest.AccountId}/pings/{User.AccountId}");
+            request.Headers.Add("Authorization", $"bearer {Session.AccessToken}");
+            request.Content = new StringContent(JsonSerializer.Serialize(new MetaDict {
+                ["urn:epic:invite:platformdata_s"] = ""
+            }), Encoding.UTF8, "application/json");
+            var response = await Http.SendAsync(request);
+            if (!response.IsSuccessStatusCode) Logging.Warn($"Failed to accept party join request! {response.StatusCode}");
+        }
+    }
+
+    public async Task AcceptJoinConfirmation(FortnitePartyJoinConfirmation joinConfirmation) {
+        if (joinConfirmation.Handled) {
+            Logging.Warn("Join confirmation already handled!");
+            return;
+        }
+        if (Party is null) throw new Exception("Not in a party!");
+        var request = new HttpRequestMessage(HttpMethod.Post, $"https://party-service-prod.ol.epicgames.com/party/api/v1/Fortnite/parties/{Party.PartyId}/members/{joinConfirmation.AccountId}/confirm");
+        request.Headers.Add("Authorization", $"bearer {Session.AccessToken}");
+        var response = await Http.SendAsync(request);
+        joinConfirmation.Handled = true;
+        if (!response.IsSuccessStatusCode) Logging.Warn($"Failed to accept party join confirmation! {response.StatusCode}");
+    }
+
+    public async Task RejectJoinConfirmation(FortnitePartyJoinConfirmation joinConfirmation) {
+        if (joinConfirmation.Handled) {
+            Logging.Warn("Join confirmation already handled!");
+            return;
+        }
+        if (Party is null) throw new Exception("Not in a party!");
+        var request = new HttpRequestMessage(HttpMethod.Post, $"https://party-service-prod.ol.epicgames.com/party/api/v1/Fortnite/parties/{Party.PartyId}/members/{joinConfirmation.AccountId}/reject");
+        request.Headers.Add("Authorization", $"bearer {Session.AccessToken}");
+        var response = await Http.SendAsync(request);
+        joinConfirmation.Handled = true;
+        if (!response.IsSuccessStatusCode) Logging.Warn($"Failed to reject party join confirmation! {response.StatusCode}");
+    }
+
     #endregion
 }

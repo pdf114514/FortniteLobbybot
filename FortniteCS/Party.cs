@@ -330,3 +330,24 @@ public class FortnitePartyJoinRequest {
         ExpiresAt = Utils.ConvertToDateTime(data.ExpiresAt);
     }
 }
+
+public class FortnitePartyJoinConfirmation {
+    public int Revision { get; }
+    public string PartyId { get; }
+    public string AccountId { get; }
+    public string DisplayName { get; }
+    public DateTime SentAt { get; }
+    public DateTime JoinedAt { get; }
+    public FortnitePartyMemberConnection Connection { get; }
+    internal bool Handled { get; set; } = false;
+
+    public FortnitePartyJoinConfirmation(FortnitePartyMemberRequireConfirmationData confirmation) {
+        Revision = confirmation.Revision;
+        PartyId = confirmation.PartyId;
+        AccountId = confirmation.AccountId;
+        DisplayName = confirmation.AccountDn;
+        SentAt = Utils.ConvertToDateTime(confirmation.Sent);
+        JoinedAt = Utils.ConvertToDateTime(confirmation.JoinedAt);
+        Connection = new(confirmation.Connection);
+    }
+}

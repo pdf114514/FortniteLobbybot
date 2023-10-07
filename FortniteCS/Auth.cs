@@ -260,11 +260,11 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
         return await new ExchangeCodeAuth(exchangeCode.Code) { Client = authClient }.Login();
     }
 
-    public async void Dispose() {
+    public void Dispose() {
         RefreshTimer?.Dispose();
         var request = new HttpRequestMessage(HttpMethod.Delete, $"https://account-public-service-prod.ol.epicgames.com/account/api/oauth/sessions/kill/{AccessToken}");
         request.Headers.Add("Authorization", $"bearer {AccessToken}");
-        await Http.SendAsync(request);
+        Http.SendAsync(request).Wait();
         Http.Dispose();
     }
 }

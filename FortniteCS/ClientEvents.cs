@@ -64,13 +64,13 @@ public partial class FortniteClient {
     public event Action<FortnitePartyInvite>? PartyInvite;
     public event Action<FortnitePartyJoinRequest>? PartyJoinRequest;
     public event Action<FortnitePartyJoinRequest>? PartyJoinRequestExpired;
-    // public event Action<FortniteParty>? PartyJoinConfirmation;
+    public event Action<FortnitePartyJoinConfirmation>? PartyJoinConfirmation;
 
     public event Action<FortnitePartyMember>? PartyMemberJoined;
     public event Action<FortnitePartyMember>? PartyMemberUpdated;
     public event Action<FortnitePartyMember>? PartyMemberLeft;
-    // public event Action<FortnitePartyMember>? PartyMemberExpired;
-    // public event Action<FortnitePartyMember>? PartyMemberKicked;
+    public event Action<FortnitePartyMember>? PartyMemberExpired;
+    public event Action<FortnitePartyMember>? PartyMemberKicked;
     // public event Action<FortnitePartyMember>? PartyMemberDisconnected;
     // public event Action<FortnitePartyMember>? PartyMemberPromoted;
     // public event Action<FortnitePartyMember>? PartyMemberOutfitUpdated;
@@ -104,9 +104,7 @@ public partial class FortniteClient {
 
     internal async Task WaitForEvent<T>(FortniteClientEvent eventName, Predicate<T> condition, TimeSpan? timeout = null) {
         var @event = GetType().GetEvent(eventName.ToString());
-        if (@event is null) {
-            throw new Exception($"Event {@eventName} does not exist!");
-        }
+        if (@event is null) throw new Exception($"Event {@eventName} does not exist!");
         var tcs = new TaskCompletionSource<T>();
         void handler(T obj) {
             if (condition(obj)) {
@@ -190,7 +188,12 @@ public partial class FortniteClient {
         PartyJoinRequestExpired?.Invoke(request);
     }
 
-    // PartyJoinConfirmation
+    internal async void OnPartyJoinConfirmation(FortnitePartyJoinConfirmation confirmation) {
+        Logging.Debug($"Party join confirmation from {confirmation.AccountId}");
+        PartyJoinConfirmation?.Invoke(confirmation);
+        Logging.Debug($"Party join confirmation handled: {confirmation.Handled}");
+        if (!confirmation.Handled) await AcceptJoinConfirmation(confirmation);
+    }
 
     internal void OnPartyMemberJoined(FortnitePartyMember member) {
         Logging.Debug($"Party member joined {member.DisplayName}");
@@ -207,5 +210,17 @@ public partial class FortniteClient {
         Logging.Debug($"Party member left {member.DisplayName}");
         Party?._Members.Remove(member);
         PartyMemberLeft?.Invoke(member);
+    }
+
+    internal void OnPartyMemberExpired(FortnitePartyMember member) {
+        Logging.Debug($"Party member expired {member.DisplayName}");
+        Party?._Members.Remove(member);
+        PartyMemberExpired?.Invoke(member);
+    }
+
+    internal void OnPartyMemberKicked(FortnitePartyMember member) {
+        Logging.Debug($"Party member kicked {member.DisplayName}");
+        Party?._Members.Remove(member);
+        PartyMemberKicked?.Invoke(member);
     }
 }
