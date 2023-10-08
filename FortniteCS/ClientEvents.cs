@@ -49,7 +49,7 @@ public partial class FortniteClient {
     public event Action? Ready;
 
     public event Action<FortniteFriend>? FriendMessage;
-    public event Action<FortniteFriend>? FriendPresence;
+    public event Action<FortnitePresence>? FriendPresence;
     public event Action<FortniteFriend>? FriendOnline;
     public event Action<FortniteFriend>? FriendOffline;
     public event Action<FortniteFriend>? FriendRemoved;
@@ -126,7 +126,12 @@ public partial class FortniteClient {
     }
 
     // FriendMessage
-    // FriendPresence
+
+    internal void OnFriendPresence(FortnitePresence presence) {
+        // Logging.Debug($"Friend presence {presence.DisplayName}");
+        FriendPresence?.Invoke(presence);
+    }
+
     // FriendOnline
     // FriendOffline
 

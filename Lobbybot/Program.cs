@@ -20,6 +20,7 @@ public class Program {
             }
         };
         // client.FriendRequestReceived += async friend => await client.AccpetFriendRequest(friend);
+        client.FriendPresence += presence => Console.WriteLine($"Presence: {presence.DisplayName} / {presence.Status}");
         client.PartyInvite += async invite => await client.AcceptInvite(invite);
         client.PartyJoinRequest += async request => await client.AcceptJoinRequest(request);
         client.PartyMemberJoined += member => {

@@ -16,7 +16,9 @@ public partial class FortniteClient {
         var response = await Http.SendAsync(request);
         if (response.StatusCode == HttpStatusCode.NotFound) return null;
         var json = await response.Content.ReadAsStringAsync();
-        return (T1?)Activator.CreateInstance(typeof(T1), JsonSerializer.Deserialize<T2>(json));
+        var user = (T1?)Activator.CreateInstance(typeof(T1), JsonSerializer.Deserialize<T2>(json));
+        if (user is not null && !_Users.Any(x => x.AccountId == user.AccountId)) _Users.Add(user);
+        return user;
     }
 
     public Task<FortniteUser?> GetUserByAccountId(string accountId) => GetAccountByAccountId<FortniteUser, FortniteUserData>(accountId);
@@ -54,7 +56,9 @@ public partial class FortniteClient {
         var response = await Http.SendAsync(request);
         if (response.StatusCode != HttpStatusCode.OK) throw new Exception("Failed to get friend!");
         var json = await response.Content.ReadAsStringAsync();
-        return new(JsonSerializer.Deserialize<FortniteFriendData>(json) ?? throw new Exception("Failed to deserialize json!"));
+        var friend = new FortniteFriend(JsonSerializer.Deserialize<FortniteFriendData>(json) ?? throw new Exception("Failed to deserialize json!"));
+        if (!_Friends.Any(x => x.AccountId == friend.AccountId)) _Friends.Add(friend);
+        return friend;
     }
 
     public async Task AddFriend(string accountId) {
