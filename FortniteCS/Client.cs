@@ -12,6 +12,8 @@ public partial class FortniteClient : IDisposable {
     public bool IsReady => Session is not null;
 
     public FortniteClientUser User { get; private set; } = null!;
+    private List<FortniteUser> _Users { get; } = new();
+    public ReadOnlyCollection<FortniteUser> Users => _Users.AsReadOnly();
     private List<FortniteFriend> _Friends { get; } = new();
     public ReadOnlyCollection<FortniteFriend> Friends => _Friends.AsReadOnly();
     private List<PendingFriend> _PendingFriends { get; } = new();

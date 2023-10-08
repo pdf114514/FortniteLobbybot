@@ -20,12 +20,27 @@ public class FortniteXMPP : IDisposable {
             _ReadyTasks.ForEach(x => x.SetResult(true));
             _ReadyTasks.Clear();
 
-            SendPresence(new()); // if you dont you will be shown as offline ?
+            // SendPresence(new()); // if you dont you will be shown as offline ?
+            SendPresence(new() { Status = "…" + new string('\u2029', 100) + "…?" }, "dnd");
         };
 
-        Connection.Presence += (XmppConnection sender, XMPPPresence e) => {
+        Connection.Presence += async (XmppConnection sender, XMPPPresence e) => {
             if (e is null) { Logging.Warn("XMPP presence is null!"); return; }
-            // Logging.Debug($"XMPP presence: {e.From} - {(e.Attribute("type")?.Value == "unavailable" ? "OFFLINE" : e.Value)}");
+            if (e.From.User == Client.User.AccountId) return;
+            // if (!e.From.User.Contains("Party", StringComparison.InvariantCultureIgnoreCase)) Logging.Debug($"XMPP presence: {e.From} - {(e.Attribute("type")?.Value == "unavailable" ? "OFFLINE" : e.Value)}");
+            FortnitePresence presence;
+            try {
+                presence = JsonSerializer.Deserialize<FortnitePresence>(e.Elements().First(x => x.Name.LocalName == "status").Value)!;
+            } catch {
+                Logging.Warn($"XMPP presence failed to deserialize");
+                return;
+            }
+            if (presence is null) { Logging.Warn("XMPP presence failed to deserialize!"); return; }
+            presence.AccountId = e.From.User;
+            var user = Client.Users.FirstOrDefault(x => x.AccountId == presence.AccountId) ?? await Client.GetUserByAccountId(presence.AccountId);
+            presence.DisplayName = user?.DisplayName!;
+            presence.IsOnline = e.Attribute("type")?.Value != "unavailable";
+            Client.OnFriendPresence(presence);
         };
 
         Connection.Message += async (XmppConnection sender, XMPPMessage e) => {
@@ -361,10 +376,10 @@ public class FortniteXMPP : IDisposable {
         Connection.Send(presence);
     }
 
-    public void SendPresence(FortnitePresence fortnitePresence, string? show = null, string type = "available") {
+    public void SendPresence(FortnitePresence fortnitePresence, string? show = null, string? type = null) {
         var presence = new XMPPPresence();
         if (show is not null) presence.Add(new XElement(XNamespace.Get("jabber:client") + "show", show));
-        if (type is not null) presence.Add(new XElement(XNamespace.Get("jabber:client") + "type", type));
+        if (type is not null) presence.Add(new XElement(XNamespace.Get("jabber:client") + "type", type)); // "available" or "unavailable" ?
         presence.Add(new XElement(XNamespace.Get("jabber:client") + "status", JsonSerializer.Serialize(fortnitePresence)));
         presence.Add(new XElement(XNamespace.Get("urn:xmpp:delay") + "delay", new XAttribute("stamp", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"))));
         Connection.Send(presence);
@@ -525,4 +540,7 @@ public class FortnitePresence {
     [K("SessionId")] public string SessionId { get; set; } = "";
     [K("ProductName")] public string? ProductName { get; set; } = "Fortnite";
     [K("Properties")] public Dictionary<string, object> Properties { get; set; } = new();
+    public string AccountId { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+    public bool IsOnline { get; set; } = true;
 }
