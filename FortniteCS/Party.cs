@@ -102,12 +102,254 @@ public class PartyOptions {
     public bool ChatEnabled { get; set; } = true;
 }
 
-public class FortnitePartyMemberMeta : MetaDict {
-    public string? Outfit { get => JsonSerializer.Deserialize<JsonElement>(this.GetValueOrDefault("Default:AthenaCosmeticLoadout_j") ?? "{}").GetProperty("AthenaCosmeticLoadout").GetProperty("characterDef").GetString(); }
+#region Meta
 
+public class FortniteAthenaBannerInfoMeta {
+    [K("bannerIconId")] public string BannerIconId { get; set; } = "standardbanner15";
+    [K("bannerColorId")] public string BannerColorId { get; set; } = "defaultcolor15";
+    [K("seasonLevel")] public int SeasonLevel { get; set; } = 1;
+}
+
+public class FortniteVariantMeta {
+    [K("c")] public required string Channel { get; init; }
+    [K("v")] public required string VariantName { get; init; }
+    [K("dE")] public int DE { get; init; } = 0;
+}
+
+public class FortniteVariantContainerMeta {
+    [K("i")] public required FortniteVariantMeta Variant { get; init; }
+}
+
+public class FortniteAthenaCosmeticLoadoutVariantsMeta {
+    [K("vL")] public Dictionary<string, FortniteVariantContainerMeta> VariantLoadout { get; init; } = new();
+    [K("fT")] public bool FT { get; set; } = false;
+}
+
+public class FortniteCosmeticStatMeta {
+    [K("statName")] public string StatName { get; init; } = "";
+    [K("statValue")] public decimal StatValue { get; set; } = 0;
+}
+
+public class FortniteAthenaCosmeticLoadoutMeta {
+    [K("characterDef")] public string CharacterDef { get; set; } = "";
+    [K("characterEKey")] public string CharacterEKey { get; set; } = "";
+    [K("backpackDef")] public string BackpackDef { get; set; } = "None";
+    [K("backpackEKey")] public string BackpackEKey { get; set; } = "";
+    [K("pickaxeDef")] public string PickaxeDef { get; set; } = "/Game/Athena/Items/Cosmetics/Pickaxes/DefaultPickaxe.DefaultPickaxe";
+    [K("pickaxeEKey")] public string PickaxeEKey { get; set; } = "";
+    [K("contrailDef")] public string ContrailDef { get; set; } = "/Game/Athena/Items/Cosmetics/Contrails/DefaultContrail.DefaultContrail";
+    [K("contrailEKey")] public string ContrailEKey { get; set; } = "";
+    [K("scratchpad")] public List<object> Scratchpad { get; set; } = new();
+    [K("cosmeticStats")] public List<FortniteCosmeticStatMeta> CosmeticStats { get; init; } = new() {
+        new() { StatName = "HabaneroProgression" },
+        new() { StatName = "TotalVictoryCrowns" },
+        new() { StatName = "TotalRoyalRoyales" },
+        new() { StatName = "HasCrown" }
+    };
+}
+
+public class FortniteBattlePassInfoMeta {
+    [K("bHasPurchasedPass")] public bool HasPurchasedPass { get; set; } = false;
+    [K("passLevel")] public int PassLevel { get; set; } = 1;
+    [K("selfBoostXp")] public int SelfBoostXp { get; set; } = 0;
+    [K("friendBoostXp")] public int FriendBoostXp { get; set; } = 0;
+}
+
+public class FortniteCampaignHeroMeta {
+    [K("heroItemInstanceId")] public string HeroItemInstanceId { get; set; } = "";
+    [K("heroType")] public string HeroType { get; set; } = "";
+}
+
+public class FortniteCampaignInfoMeta {
+    [K("matchmakingLevel")] public int MatchmakingLevel { get; set; } = 0;
+    [K("zoneInstanceId")] public string ZoneInstanceId { get; set; } = "";
+    [K("homeBaseVersion")] public int HomeBaseVersion { get; set; } = 1;
+}
+
+public class FortniteFortCommonMatchmakingDataMeta {
+    [K("request")] public _Request Request { get; init; } = new();
+    [K("response")] public string Response { get; set; } = "NONE";
+    [K("version")] public int Version { get; set; } = 0;
+
+    public class _Request {
+        [K("linkId")] public _LinkId LinkId { get; init; } = new();
+        [K("matchmakingTransaction")] public string MatchmakingTransaction { get; set; } = "NotReady";
+        [K("requester")] public string Requester { get; set; } = "INVALID";
+        [K("version")] public int Version { get; set; } = 0;
+
+        public class _LinkId {
+            [K("mnemonic")] public string Mnemonic { get; init; } = "";
+            [K("version")] public int Version { get; set; } = -1;
+        }
+    }
+}
+
+public class FortniteFortMatchmakingMemberDataMeta {
+    [K("request")] public _Request Request { get; init; } = new();
+    [K("response")] public string Response { get; set; } = "NONE";
+    [K("version")] public int Version { get; set; } = 0;
+
+    public class _Request {
+        [K("members")] public List<_Member> Members { get; init; } = new();
+        [K("requester")] public string Requester { get; set; } = "INVALID";
+        [K("version")] public int Version { get; set; } = 0;
+
+        public class _Member {
+            [K("player")] public string Player { get; init; } = "";
+            [K("readiness")] public string Readiness { get; set; } = "NotReady";
+            [K("currentGameId")] public _CurrentGameId CurrentGameId { get; init; } = new();
+            [K("currentGameType")] public string CurrentGameType { get; set; } = "UNDEFINED";
+            [K("currentGameSessionId")] public string CurrentGameSessionId { get; set; } = "";
+            [K("version")] public int Version { get; set; } = 101;
+
+            public class _CurrentGameId {
+                [K("mnemonic")] public string Mnemonic { get; init; } = "";
+                [K("version")] public int Version { get; set; } = -1;
+            }
+        }
+    }
+}
+
+public class FortniteFrontEndMapMarkerMeta {
+    [K("markerLocation")] public _MarkerLocation MarkerLocation { get; init; } = new();
+    [K("bIsSet")] public bool IsSet { get; set; } = false;
+
+    public class _MarkerLocation {
+        [K("x")] public decimal X { get; init; } = 0; // int ?
+        [K("y")] public decimal Y { get; init; } = 0;
+    }
+}
+
+public class FortniteFrontendEmoteMeta {
+    [K("emoteItemDef")] public string EmoteItemDef { get; set; } = "None";
+    [K("emoteEKey")] public string EmoteEKey { get; set; } = "";
+    [K("emoteSection")] public int EmoteSection { get; set; } = -1;
+}
+
+public class FortniteJoinInProgressDataMeta {
+    [K("request")] public _Request Request { get; init; } = new();
+    [K("responses")] public List<string> Responses { get; set; } = new();
+
+    public class _Request {
+        [K("target")] public string Target { get; set; } = "INVALID";
+        [K("time")] public int Time { get; set; } = 0; // int ?
+    }
+}
+
+public class FortniteLobbyStateMeta {
+    [K("inGameReadyCheckStatus")] public string InGameReadyCheckStatus { get; set; } = "None";
+    [K("gameReadiness")] public string GameReadiness { get; set; } = "NotReady";
+    [K("readyInputType")] public string ReadyInputType { get; set; } = "Count";
+    [K("currentInputType")] public string CurrentInputType { get; set; } = "MouseAndKeyboard";
+    [K("hiddenMatchmakingDelayMax")] public int HiddenMatchmakingDelayMax { get; set; } = 0;
+    [K("hasPreloadedAthena")] public bool HasPreloadedAthena { get; set; } = false;
+}
+
+public class FortniteMemberSquadAssignmentRequestMeta {
+    [K("startingAbsoluteIdx")] public int StartingAbsoluteIdx { get; set; } = -1;
+    [K("targetAbsoluteIdx")] public int TargetAbsoluteIdx { get; set; } = -1;
+    [K("swapTargetMemberId")] public string SwapTargetMemberId { get; set; } = "INVALID";
+    [K("version")] public int Version { get; set; } = 0;
+}
+
+public class FortnitePackedStateMeta {
+    [K("subGame")] public string SubGame { get; set; } = "Athena";
+    [K("location")] public string Location { get; set; } = "PreLobby";
+    [K("gameMode")] public string GameMode { get; set; } = "None";
+    [K("voiceChatStatus")] public string VoiceChatStatus { get; set; } = "PartyVoice";
+    [K("hasCompletedSTWTutorial")] public bool HasCompletedSTWTutorial { get; set; } = false;
+    [K("hasPurchasedSTW")] public bool HasPurchasedSTW { get; set; } = false;
+    [K("platformSupportsSTW")] public bool PlatformSupportsSTW { get; set; } = true;
+    [K("bReturnToLobbyAndReadyUp")] public bool ReturnToLobbyAndReadyUp { get; set; } = false;
+    [K("bHideReadyUp")] public bool HideReadyUp { get; set; } = false;
+    [K("bDownloadOnDemandActive")] public bool DownloadOnDemandActive { get; set; } = false;
+    [K("bIsPartyLFG")] public bool IsPartyLFG { get; set; } = false;
+    [K("bShouldRecordPartyChannel")] public bool ShouldRecordPartyChannel { get; set; } = false;
+}
+
+public class FortnitePlatformDataMeta {
+    [K("platform")] public _Platform Platform { get; init; } = new();
+    [K("uniqueId")] public string UniqueId { get; set; } = "INVALID";
+    [K("sessionId")] public string SessionId { get; set; } = "";
+
+    public class _Platform {
+        [K("platformDescription")] public _PlatformDescription PlatformDescription { get; init; } = new();
+
+        public class _PlatformDescription {
+            [K("name")] public string Name { get; set; } = "";
+            [K("platformType")] public string PlatformType { get; set; } = "DESKTOP";
+            [K("onlineSubsystem")] public string OnlineSubsystem { get; set; } = "None";
+            [K("sessionType")] public string SessionType { get; set; } = "";
+            [K("externalAccountType")] public string ExternalAccountType { get; set; } = "";
+            [K("crossplayPool")] public string CrossplayPool { get; set; } = "DESKTOP";
+        }
+    }
+}
+
+public class FortniteSharedQuestsMeta {
+    [K("bcktMap")] public object BcktMap { get; init; } = new();
+    [K("pndQst")] public string PndQst { get; init; } = "";
+}
+
+public class FortniteSpectateInfoMeta {
+    [K("gameSessionId")] public string GameSessionId { get; set; } = "";
+    [K("gameSessionKey")] public string GameSessionKey { get; set; } = "";
+}
+
+public class FortnitePartyMemberMeta : MetaDict {
     public FortnitePartyMemberMeta() : base() {}
     public FortnitePartyMemberMeta(MetaDict meta) : base(meta) {}
+
+    private bool GetBool(string key, string? prefix = "Default") => bool.Parse(this.GetValueOrDefault(prefix is not null ? $"{prefix}:{key}_b" : $"{key}_b") ?? "false");
+    private void SetBool(string key, bool value, string? prefix = "Default") => this[prefix is not null ? $"{prefix}:{key}_b" : $"{key}_b"] = value.ToString().ToLower();
+
+    private string GetString(string key, string? prefix = "Default") => this.GetValueOrDefault(prefix is not null ? $"{prefix}:{key}_s" : $"{key}_s") ?? string.Empty;
+    private void SetString(string key, string value, string? prefix = "Default") => this[prefix is not null ? $"{prefix}:{key}_s" : $"{key}_s"] = value;
+
+    private decimal GetDecimal(string key, string? prefix = "Default") => decimal.Parse(this.GetValueOrDefault(prefix is not null ? $"{prefix}:{key}_d" : $"{key}_d") ?? "0");
+    private void SetDecimal(string key, decimal value, string? prefix = "Default") => this[prefix is not null ? $"{prefix}:{key}_d" : $"{key}_d"] = value.ToString();
+
+    private uint GetUint(string key, string? prefix = "Default") => uint.Parse(this.GetValueOrDefault(prefix is not null ? $"{prefix}:{key}_u" : $"{key}_U") ?? "0");
+    private void SetUint(string key, uint value, string? prefix = "Default") => this[prefix is not null ? $"{prefix}:{key}_u" : $"{key}_U"] = value.ToString();
+
+    private T GetObject<T>(string key, string? prefix = "Default") where T : class, new() => JsonSerializer.Deserialize<Dictionary<string, T>>(this.GetValueOrDefault(prefix is not null ? $"{prefix}:{key}" : $"{key}_j") ?? string.Empty)?.GetValueOrDefault(key) ?? new();
+    private void SetObject<T>(string key, T value, string? prefix = "Default") where T : class, new() => this[prefix is not null ? $"{prefix}:{key}" : $"{key}_j"] = JsonSerializer.Serialize(new Dictionary<string, T>() { { key, value } });
+
+    public List<object> ArbitraryCustomDataStore { get => GetObject<List<object>>(nameof(ArbitraryCustomDataStore)); set => SetObject(nameof(ArbitraryCustomDataStore), value); }
+    public FortniteAthenaBannerInfoMeta AthenaBannerInfo { get => GetObject<FortniteAthenaBannerInfoMeta>(nameof(AthenaBannerInfo)); set => SetObject(nameof(AthenaBannerInfo), value); }
+    public FortniteAthenaCosmeticLoadoutVariantsMeta AthenaCosmeticLoadoutVariants { get => GetObject<FortniteAthenaCosmeticLoadoutVariantsMeta>(nameof(AthenaCosmeticLoadoutVariants)); set => SetObject(nameof(AthenaCosmeticLoadoutVariants), value); }
+    public FortniteAthenaCosmeticLoadoutMeta AthenaCosmeticLoadout { get => GetObject<FortniteAthenaCosmeticLoadoutMeta>(nameof(AthenaCosmeticLoadout)); set => SetObject(nameof(AthenaCosmeticLoadout), value); }
+    public FortniteBattlePassInfoMeta BattlePassInfo { get => GetObject<FortniteBattlePassInfoMeta>(nameof(BattlePassInfo)); set => SetObject(nameof(BattlePassInfo), value); }
+    public bool IsPartyUsingPartySignal { get => GetBool(nameof(IsPartyUsingPartySignal)); set => SetBool(nameof(IsPartyUsingPartySignal), value); }
+    public FortniteCampaignHeroMeta CampaignHero { get => GetObject<FortniteCampaignHeroMeta>(nameof(CampaignHero)); set => SetObject(nameof(CampaignHero), value); }
+    public FortniteCampaignInfoMeta CampaignInfo { get => GetObject<FortniteCampaignInfoMeta>(nameof(CampaignInfo)); set => SetObject(nameof(CampaignInfo), value); }
+    public string CrossplayPreference { get => GetString(nameof(CrossplayPreference)) is var x && string.IsNullOrEmpty(x) ? "OptedIn" : x; set => SetString(nameof(CrossplayPreference), value); }
+    public decimal DownloadOnDemandProgress { get => GetDecimal(nameof(DownloadOnDemandProgress)); set => SetDecimal(nameof(DownloadOnDemandProgress), value); }
+    public string FeatDefinition { get => GetString(nameof(FeatDefinition)) is var x && string.IsNullOrEmpty(x) ? "None" : x; set => SetString(nameof(FeatDefinition), value); }
+    public FortniteFortCommonMatchmakingDataMeta FortCommonCoreMatchmakingData { get => GetObject<FortniteFortCommonMatchmakingDataMeta>(nameof(FortCommonCoreMatchmakingData)); set => SetObject(nameof(FortCommonCoreMatchmakingData), value); }
+    public FortniteFortMatchmakingMemberDataMeta FortMatchmakingMemberData { get => GetObject<FortniteFortMatchmakingMemberDataMeta>(nameof(FortMatchmakingMemberData)); set => SetObject(nameof(FortMatchmakingMemberData), value); }
+    public FortniteFrontEndMapMarkerMeta FrontEndMapMarker { get => GetObject<FortniteFrontEndMapMarkerMeta>(nameof(FrontEndMapMarker)); set => SetObject(nameof(FrontEndMapMarker), value); }
+    public FortniteFrontendEmoteMeta FrontendEmote { get => GetObject<FortniteFrontendEmoteMeta>(nameof(FrontendEmote)); set => SetObject(nameof(FrontendEmote), value); }
+    public FortniteJoinInProgressDataMeta JoinInProgressData { get => GetObject<FortniteJoinInProgressDataMeta>(nameof(JoinInProgressData)); set => SetObject(nameof(JoinInProgressData), value); }
+    public string JoinMethod { get => GetString(nameof(JoinMethod)) is var x && string.IsNullOrEmpty(x) ? "Creation" : x; set => SetString(nameof(JoinMethod), value); }
+    public FortniteLobbyStateMeta LobbyState { get => GetObject<FortniteLobbyStateMeta>(nameof(LobbyState)); set => SetObject(nameof(LobbyState), value); }
+    public FortniteMemberSquadAssignmentRequestMeta MemberSquadAssignmentRequest { get => GetObject<FortniteMemberSquadAssignmentRequestMeta>(nameof(MemberSquadAssignmentRequest)); set => SetObject(nameof(MemberSquadAssignmentRequest), value); }
+    public uint NumAthenaPlayersLeft { get => GetUint(nameof(NumAthenaPlayersLeft)); set => SetUint(nameof(NumAthenaPlayersLeft), value); }
+    public FortnitePackedStateMeta PackedState { get => GetObject<FortnitePackedStateMeta>(nameof(PackedState)); set => SetObject(nameof(PackedState), value); }
+    public FortnitePlatformDataMeta PlatformData { get => GetObject<FortnitePlatformDataMeta>(nameof(PlatformData)); set => SetObject(nameof(PlatformData), value); }
+    public FortniteSharedQuestsMeta SharedQuests { get => GetObject<FortniteSharedQuestsMeta>(nameof(SharedQuests)); set => SetObject(nameof(SharedQuests), value); }
+    public FortniteSpectateInfoMeta SpectateInfo { get => GetObject<FortniteSpectateInfoMeta>(nameof(SpectateInfo)); set => SetObject(nameof(SpectateInfo), value); }
+    public string UtcTimeStartedMatchAthena { get => GetString(nameof(UtcTimeStartedMatchAthena)) is var x && string.IsNullOrEmpty(x) ? "0001-01-01T00:00:00.000Z" : x; set => SetString(nameof(UtcTimeStartedMatchAthena), value); }
+
+    public string Outfit { get => AthenaCosmeticLoadout.CharacterDef; set => AthenaCosmeticLoadout.CharacterDef = value; }
+    public string Backpack { get => AthenaCosmeticLoadout.BackpackDef; set => AthenaCosmeticLoadout.BackpackDef = value; }
+    public string Pickaxe { get => AthenaCosmeticLoadout.PickaxeDef; set => AthenaCosmeticLoadout.PickaxeDef = value; }
+    public string Emote { get => FrontendEmote.EmoteItemDef; set => FrontendEmote.EmoteItemDef = value; }
+
+    // todo implement cosmetic variant accessors
 }
+
+#endregion
 
 public class FortnitePartyConfigData {
     [K("type")] public required string Type { get; init; }
@@ -218,8 +460,12 @@ public class FortnitePartyMember {
 }
 
 public class FortniteClientPartyMember : FortnitePartyMember {
-    public FortniteClientPartyMember(FortniteParty party, FortnitePartyMemberData data) : base(party, data) {}
-    public FortniteClientPartyMember(FortniteParty party, FortnitePartyMemberJoinedData data) : base(party, data) {}
+    public FortniteClientPartyMember(FortniteParty party, FortnitePartyMemberData data) : base(party, data) => Initialize();
+    public FortniteClientPartyMember(FortniteParty party, FortnitePartyMemberJoinedData data) : base(party, data) => Initialize();
+
+    private void Initialize() {
+        Meta.Add("urn:epic:member:dn_s", Party.Client.User.DisplayName);
+    }
 
     public async void SendPatch(MetaDict updated) {
         var request = new HttpRequestMessage(HttpMethod.Patch, $"https://party-service-prod.ol.epicgames.com/party/api/v1/Fortnite/parties/{Party.PartyId}/members/{AccountId}/meta");
