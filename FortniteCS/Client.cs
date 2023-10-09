@@ -4,7 +4,7 @@ namespace FortniteCS;
 
 public partial class FortniteClient : IDisposable {
     internal HttpClient Http { get; init; } = new();
-    public ForntiteConfig Config { get; init; } = new();
+    public FortniteConfig Config { get; init; } = new();
 
     private AuthBase<FortniteAuthSession, FortniteAuthData> Auth { get; init; }
     public FortniteAuthSession Session { get; private set; } = null!;

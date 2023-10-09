@@ -177,10 +177,12 @@ public class FortniteXMPP : IDisposable {
                         Logging.Debug($"Joined party {payload.PartyId}");
                         JoinMUC(payload.PartyId);
                         SendPresence(new());
-                        // todo implement
-                        member.SendPatch(new() {
-                            ["Default:AthenaCosmeticLoadout_j"] = "{\"AthenaCosmeticLoadout\":{\"characterDef\":\"\",\"characterEKey\":\"\",\"backpackDef\":\"None\",\"backpackEKey\":\"\",\"pickaxeDef\":\"/Game/Athena/Items/Cosmetics/Pickaxes/DefaultPickaxe.DefaultPickaxe\",\"pickaxeEKey\":\"\",\"contrailDef\":\"/Game/Athena/Items/Cosmetics/Contrails/DefaultContrail.DefaultContrail\",\"contrailEKey\":\"\",\"scratchpad\":[],\"cosmeticStats\":[{\"statName\":\"HabaneroProgression\",\"statValue\":0},{\"statName\":\"TotalVictoryCrowns\",\"statValue\":0},{\"statName\":\"TotalRoyalRoyales\",\"statValue\":0},{\"statName\":\"HasCrown\",\"statValue\":0}]}}"
-                        });
+                        // todo implement meta things
+                        member.Meta.Outfit = Client.Config.DefaultOutfit;
+                        member.Meta.Backpack = Client.Config.DefaultOutfit;
+                        member.Meta.Pickaxe = Client.Config.DefaultPickaxe;
+
+                        member.SendPatch(member.Meta);
                     }
 
                     if (Client.Party.Members.ContainsKey(payload.AccountId)) {

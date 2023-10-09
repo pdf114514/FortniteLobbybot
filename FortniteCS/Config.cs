@@ -1,6 +1,6 @@
 namespace FortniteCS;
 
-public class ForntiteConfig {
+public class FortniteConfig {
     public bool SavePartyMemberMeta { get; set; } = true;
     public string DefaultStatus { get; set; } = "Battle Royale Lobby";
     public string DefaultOnlineType { get; set; } = EFortnitePresenceOnlineType.Online;
@@ -13,4 +13,9 @@ public class ForntiteConfig {
     public bool RestartOnInvalidRefresh { get; set; } = true;
     public string Language { get; set; } = "en-US"; // Accept-Language header
     public bool KillOtherTokens { get; set; } = true;
+
+    public string DefaultOutfit { get; set; } = "CID_001_Athena_Commando_F_Default";
+    public string DefaultBackpack { get; set; } = "BID_001_Default";
+    public string DefaultPickaxe { get; set; } = "Pickaxe_Lockjaw";
+    public string DefaultEmote { get; set; } = "EID_Floss";
 }
