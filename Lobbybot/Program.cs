@@ -18,6 +18,7 @@ public class Program {
             if (!File.Exists("deviceAuth.json")) {
                 File.WriteAllText("deviceAuth.json", JsonSerializer.Serialize(await client.Session.CreateDeviceAuth()));
             }
+            // Console.WriteLine(FortniteUtils.JsonSerialize(client.Party?.Members[client.User.AccountId].Meta));
         };
         // client.FriendRequestReceived += async friend => await client.AccpetFriendRequest(friend);
         client.FriendPresence += presence => Console.WriteLine($"Presence: {presence.DisplayName} / {presence.Status}");

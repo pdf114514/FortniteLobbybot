@@ -55,7 +55,7 @@ public class FortniteFriend {
         Alias = data.Alias;
         Note = data.Note;
         Favorite = data.Favorite;
-        CreatedAt = Utils.ConvertToDateTime(data.Created);
+        CreatedAt = FortniteUtils.ConvertToDateTime(data.Created);
     }
 }
 
@@ -68,7 +68,7 @@ public abstract class PendingFriend {
     public PendingFriend(PendingFriendData data) {
         AccountId = data.AccountId;
         Mutual = data.Mutual;
-        CreatedAt = Utils.ConvertToDateTime(data.Created);
+        CreatedAt = FortniteUtils.ConvertToDateTime(data.Created);
     }
 }
 

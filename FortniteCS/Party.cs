@@ -133,11 +133,11 @@ public class FortniteCosmeticStatMeta {
 public class FortniteAthenaCosmeticLoadoutMeta {
     [K("characterDef")] public string CharacterDef { get; set; } = "";
     [K("characterEKey")] public string CharacterEKey { get; set; } = "";
-    [K("backpackDef")] public string BackpackDef { get; set; } = "None";
+    [K("backpackDef")] public string BackpackDef { get; set; } = "";
     [K("backpackEKey")] public string BackpackEKey { get; set; } = "";
-    [K("pickaxeDef")] public string PickaxeDef { get; set; } = "/Game/Athena/Items/Cosmetics/Pickaxes/DefaultPickaxe.DefaultPickaxe";
+    [K("pickaxeDef")] public string PickaxeDef { get; set; } = "";
     [K("pickaxeEKey")] public string PickaxeEKey { get; set; } = "";
-    [K("contrailDef")] public string ContrailDef { get; set; } = "/Game/Athena/Items/Cosmetics/Contrails/DefaultContrail.DefaultContrail";
+    [K("contrailDef")] public string ContrailDef { get; set; } = "";
     [K("contrailEKey")] public string ContrailEKey { get; set; } = "";
     [K("scratchpad")] public List<object> Scratchpad { get; set; } = new();
     [K("cosmeticStats")] public List<FortniteCosmeticStatMeta> CosmeticStats { get; init; } = new() {
@@ -297,8 +297,37 @@ public class FortniteSpectateInfoMeta {
 }
 
 public class FortnitePartyMemberMeta : MetaDict {
-    public FortnitePartyMemberMeta() : base() {}
-    public FortnitePartyMemberMeta(MetaDict meta) : base(meta) {}
+    public FortnitePartyMemberMeta() : base() => Initialize();
+    public FortnitePartyMemberMeta(MetaDict meta) : base(meta) => Initialize();
+
+    private void Initialize() {
+        ArbitraryCustomDataStore = new();
+        AthenaBannerInfo = new();
+        AthenaCosmeticLoadoutVariants = new();
+        AthenaCosmeticLoadout = new();
+        BattlePassInfo = new();
+        IsPartyUsingPartySignal = false;
+        CampaignHero = new();
+        CampaignInfo = new();
+        CrossplayPreference = "OptedIn";
+        DownloadOnDemandProgress = 0;
+        FeatDefinition = "None";
+        FortCommonCoreMatchmakingData = new();
+        FortMatchmakingMemberData = new();
+        FrontEndMapMarker = new();
+        FrontendEmote = new();
+        JoinInProgressData = new();
+        JoinMethod = "Creation";
+        LobbyState = new();
+        MemberSquadAssignmentRequest = new();
+        NumAthenaPlayersLeft = 0;
+        PackedState = new();
+        PlatformData = new();
+        SharedQuests = new();
+        SpectateInfo = new();
+        UtcTimeStartedMatchAthena = "0001-01-01T00:00:00.000Z";
+        VoiceChatEnabled = true;
+    }
 
     private bool GetBool(string key, string? prefix = "Default") => bool.Parse(this.GetValueOrDefault(prefix is not null ? $"{prefix}:{key}_b" : $"{key}_b") ?? "false");
     private void SetBool(string key, bool value, string? prefix = "Default") => this[prefix is not null ? $"{prefix}:{key}_b" : $"{key}_b"] = value.ToString().ToLower();
@@ -323,15 +352,15 @@ public class FortnitePartyMemberMeta : MetaDict {
     public bool IsPartyUsingPartySignal { get => GetBool(nameof(IsPartyUsingPartySignal)); set => SetBool(nameof(IsPartyUsingPartySignal), value); }
     public FortniteCampaignHeroMeta CampaignHero { get => GetObject<FortniteCampaignHeroMeta>(nameof(CampaignHero)); set => SetObject(nameof(CampaignHero), value); }
     public FortniteCampaignInfoMeta CampaignInfo { get => GetObject<FortniteCampaignInfoMeta>(nameof(CampaignInfo)); set => SetObject(nameof(CampaignInfo), value); }
-    public string CrossplayPreference { get => GetString(nameof(CrossplayPreference)) is var x && string.IsNullOrEmpty(x) ? "OptedIn" : x; set => SetString(nameof(CrossplayPreference), value); }
+    public string CrossplayPreference { get => GetString(nameof(CrossplayPreference)); set => SetString(nameof(CrossplayPreference), value); }
     public decimal DownloadOnDemandProgress { get => GetDecimal(nameof(DownloadOnDemandProgress)); set => SetDecimal(nameof(DownloadOnDemandProgress), value); }
-    public string FeatDefinition { get => GetString(nameof(FeatDefinition)) is var x && string.IsNullOrEmpty(x) ? "None" : x; set => SetString(nameof(FeatDefinition), value); }
+    public string FeatDefinition { get => GetString(nameof(FeatDefinition)); set => SetString(nameof(FeatDefinition), value); }
     public FortniteFortCommonMatchmakingDataMeta FortCommonCoreMatchmakingData { get => GetObject<FortniteFortCommonMatchmakingDataMeta>(nameof(FortCommonCoreMatchmakingData)); set => SetObject(nameof(FortCommonCoreMatchmakingData), value); }
     public FortniteFortMatchmakingMemberDataMeta FortMatchmakingMemberData { get => GetObject<FortniteFortMatchmakingMemberDataMeta>(nameof(FortMatchmakingMemberData)); set => SetObject(nameof(FortMatchmakingMemberData), value); }
     public FortniteFrontEndMapMarkerMeta FrontEndMapMarker { get => GetObject<FortniteFrontEndMapMarkerMeta>(nameof(FrontEndMapMarker)); set => SetObject(nameof(FrontEndMapMarker), value); }
     public FortniteFrontendEmoteMeta FrontendEmote { get => GetObject<FortniteFrontendEmoteMeta>(nameof(FrontendEmote)); set => SetObject(nameof(FrontendEmote), value); }
     public FortniteJoinInProgressDataMeta JoinInProgressData { get => GetObject<FortniteJoinInProgressDataMeta>(nameof(JoinInProgressData)); set => SetObject(nameof(JoinInProgressData), value); }
-    public string JoinMethod { get => GetString(nameof(JoinMethod)) is var x && string.IsNullOrEmpty(x) ? "Creation" : x; set => SetString(nameof(JoinMethod), value); }
+    public string JoinMethod { get => GetString(nameof(JoinMethod)); set => SetString(nameof(JoinMethod), value); }
     public FortniteLobbyStateMeta LobbyState { get => GetObject<FortniteLobbyStateMeta>(nameof(LobbyState)); set => SetObject(nameof(LobbyState), value); }
     public FortniteMemberSquadAssignmentRequestMeta MemberSquadAssignmentRequest { get => GetObject<FortniteMemberSquadAssignmentRequestMeta>(nameof(MemberSquadAssignmentRequest)); set => SetObject(nameof(MemberSquadAssignmentRequest), value); }
     public uint NumAthenaPlayersLeft { get => GetUint(nameof(NumAthenaPlayersLeft)); set => SetUint(nameof(NumAthenaPlayersLeft), value); }
@@ -339,11 +368,14 @@ public class FortnitePartyMemberMeta : MetaDict {
     public FortnitePlatformDataMeta PlatformData { get => GetObject<FortnitePlatformDataMeta>(nameof(PlatformData)); set => SetObject(nameof(PlatformData), value); }
     public FortniteSharedQuestsMeta SharedQuests { get => GetObject<FortniteSharedQuestsMeta>(nameof(SharedQuests)); set => SetObject(nameof(SharedQuests), value); }
     public FortniteSpectateInfoMeta SpectateInfo { get => GetObject<FortniteSpectateInfoMeta>(nameof(SpectateInfo)); set => SetObject(nameof(SpectateInfo), value); }
-    public string UtcTimeStartedMatchAthena { get => GetString(nameof(UtcTimeStartedMatchAthena)) is var x && string.IsNullOrEmpty(x) ? "0001-01-01T00:00:00.000Z" : x; set => SetString(nameof(UtcTimeStartedMatchAthena), value); }
+    public string UtcTimeStartedMatchAthena { get => GetString(nameof(UtcTimeStartedMatchAthena)); set => SetString(nameof(UtcTimeStartedMatchAthena), value); }
+    public bool VoiceChatEnabled { get => GetBool(nameof(VoiceChatEnabled)); set => SetBool(nameof(VoiceChatEnabled), value); }
 
-    public string Outfit { get => AthenaCosmeticLoadout.CharacterDef; set => AthenaCosmeticLoadout.CharacterDef = value; }
-    public string Backpack { get => AthenaCosmeticLoadout.BackpackDef; set => AthenaCosmeticLoadout.BackpackDef = value; }
-    public string Pickaxe { get => AthenaCosmeticLoadout.PickaxeDef; set => AthenaCosmeticLoadout.PickaxeDef = value; }
+    public string Platform { get => PlatformData.Platform.PlatformDescription.Name; set => PlatformData.Platform.PlatformDescription.Name = value; }
+
+    public string Outfit { get => FortniteUtils.GetOutfitId(AthenaCosmeticLoadout.CharacterDef); set => AthenaCosmeticLoadout.CharacterDef = value.StartsWith("/") ? value : $"/Game/Athena/Items/Cosmetics/Characters/{value}.{value}"; }
+    public string Backpack { get => FortniteUtils.GetBackpackId(AthenaCosmeticLoadout.BackpackDef); set => AthenaCosmeticLoadout.BackpackDef = value.StartsWith("/") ? value : $"/Game/Athena/Items/Cosmetics/Backpacks/{value}.{value}"; }
+    public string Pickaxe { get => FortniteUtils.GetPickaxeId(AthenaCosmeticLoadout.PickaxeDef); set => AthenaCosmeticLoadout.PickaxeDef = value.StartsWith("/") ? value : $"/Game/Athena/Items/Cosmetics/Pickaxes/{value}.{value}"; }
     public string Emote { get => FrontendEmote.EmoteItemDef; set => FrontendEmote.EmoteItemDef = value; }
 
     // todo implement cosmetic variant accessors
@@ -413,8 +445,8 @@ public class FortnitePartyMemberConnection {
 
     public FortnitePartyMemberConnection(FortnitePartyMemberConnectionData data) {
         Id = data.Id;
-        ConnectedAt = Utils.ConvertToDateTime(data.ConnectedAt);
-        UpdatedAt = Utils.ConvertToDateTime(data.UpdatedAt);
+        ConnectedAt = FortniteUtils.ConvertToDateTime(data.ConnectedAt);
+        UpdatedAt = FortniteUtils.ConvertToDateTime(data.UpdatedAt);
         YieldLeadership = data.YieldLeadership;
         Meta = data.Meta;
     }
@@ -438,8 +470,8 @@ public class FortnitePartyMember {
         DisplayName = data.Meta.GetValueOrDefault("urn:epic:member:dn_s");
         Connections = data.Connections.Select(x => new FortnitePartyMemberConnection(x)).ToList();
         Role = data.Role;
-        JoinedAt = Utils.ConvertToDateTime(data.JoinedAt);
-        UpdatedAt = Utils.ConvertToDateTime(data.UpdatedAt);
+        JoinedAt = FortniteUtils.ConvertToDateTime(data.JoinedAt);
+        UpdatedAt = FortniteUtils.ConvertToDateTime(data.UpdatedAt);
         Meta = new(data.Meta);
         Revision = data.Revision;
     }
@@ -450,8 +482,8 @@ public class FortnitePartyMember {
         DisplayName = data.AccountDn;
         Connections = new() { new(data.Connection) };
         Role = EFortnitePartyMemberRole.Member; // How leader joins?
-        JoinedAt = Utils.ConvertToDateTime(data.JoinedAt);
-        UpdatedAt = Utils.ConvertToDateTime(data.UpdatedAt);
+        JoinedAt = FortniteUtils.ConvertToDateTime(data.JoinedAt);
+        UpdatedAt = FortniteUtils.ConvertToDateTime(data.UpdatedAt);
         Meta = new();
         Revision = data.Revision;
     }
@@ -497,9 +529,9 @@ public class FortnitePartyInvite {
         SentBy = data.SentBy;
         Meta = data.Meta;
         SentTo = data.SentTo;
-        SentAt = Utils.ConvertToDateTime(data.SentAt);
-        UpdatedAt = Utils.ConvertToDateTime(data.UpdatedAt);
-        ExpiresAt = Utils.ConvertToDateTime(data.ExpiresAt);
+        SentAt = FortniteUtils.ConvertToDateTime(data.SentAt);
+        UpdatedAt = FortniteUtils.ConvertToDateTime(data.UpdatedAt);
+        ExpiresAt = FortniteUtils.ConvertToDateTime(data.ExpiresAt);
         Status = data.Status;
     }
 }
@@ -519,7 +551,7 @@ public class FortniteParty {
     public FortniteParty(FortniteClient client, FortnitePartyData data) {
         Client = client;
         PartyId = data.Id;
-        CreatedAt = Utils.ConvertToDateTime(data.CreatedAt);
+        CreatedAt = FortniteUtils.ConvertToDateTime(data.CreatedAt);
         Config = data.Config;
         Privacy = new() {
             PartyType = data.Config.Type,
@@ -572,8 +604,8 @@ public class FortnitePartyJoinRequest {
         PartyId = data.PartyId;
         AccountId = data.RequesterId;
         DisplayName = data.RequesterDn;
-        SentAt = Utils.ConvertToDateTime(data.SentAt);
-        ExpiresAt = Utils.ConvertToDateTime(data.ExpiresAt);
+        SentAt = FortniteUtils.ConvertToDateTime(data.SentAt);
+        ExpiresAt = FortniteUtils.ConvertToDateTime(data.ExpiresAt);
     }
 }
 
@@ -592,8 +624,8 @@ public class FortnitePartyJoinConfirmation {
         PartyId = confirmation.PartyId;
         AccountId = confirmation.AccountId;
         DisplayName = confirmation.AccountDn;
-        SentAt = Utils.ConvertToDateTime(confirmation.Sent);
-        JoinedAt = Utils.ConvertToDateTime(confirmation.JoinedAt);
+        SentAt = FortniteUtils.ConvertToDateTime(confirmation.Sent);
+        JoinedAt = FortniteUtils.ConvertToDateTime(confirmation.JoinedAt);
         Connection = new(confirmation.Connection);
     }
 }
