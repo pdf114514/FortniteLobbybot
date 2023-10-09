@@ -102,7 +102,7 @@ public partial class FortniteClient {
         }
     }
 
-    internal async Task WaitForEvent<T>(FortniteClientEvent eventName, Predicate<T> condition, TimeSpan? timeout = null) {
+    internal async Task<T> WaitForEvent<T>(FortniteClientEvent eventName, Predicate<T> condition, TimeSpan? timeout = null) {
         var @event = GetType().GetEvent(eventName.ToString());
         if (@event is null) throw new Exception($"Event {@eventName} does not exist!");
         var tcs = new TaskCompletionSource<T>();
@@ -115,9 +115,12 @@ public partial class FortniteClient {
         @event.AddEventHandler(this, handler);
         var task = tcs.Task;
         if (timeout is not null) {
-            await Task.WhenAny(task, Task.Delay(timeout.Value));
+            await Task.WhenAny(task, ((Func<Task>)(async () => {
+                await Task.Delay(timeout.Value);
+                @event.RemoveEventHandler(this, handler);
+            }))());
         }
-        await task;
+        return await task;
     }
 
     [FortniteClientEvent(FortniteClientEvent.Ready)]

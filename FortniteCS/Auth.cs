@@ -157,7 +157,7 @@ public class AuthSession<T> where T : AuthData {
 
     public AuthSession(T data, string clientSecret) {
         AccessToken = data.AccessToken;
-        ExpiresAt = Utils.ConvertToDateTime(data.ExpiresAt);
+        ExpiresAt = FortniteUtils.ConvertToDateTime(data.ExpiresAt);
         AccountId = data.AccountId;
         ClientId = data.ClientId;
         ClientSecret = clientSecret;
@@ -187,7 +187,7 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
         InAppId = data.InAppId;
         DeviceId = data.DeviceId;
         RefreshToken = data.RefreshToken;
-        RefreshExpiresAt = Utils.ConvertToDateTime(data.RefreshExpiresAt);
+        RefreshExpiresAt = FortniteUtils.ConvertToDateTime(data.RefreshExpiresAt);
 
         SetRefreshTimer();
     }
@@ -220,9 +220,9 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
             if (!response.IsSuccessStatusCode) throw new Exception("Failed to refresh authentication");
             var data = JsonSerializer.Deserialize<FortniteAuthData>(await response.Content.ReadAsStringAsync()) ?? throw new Exception("Failed to deserialize authentication data");
             AccessToken = data.AccessToken;
-            ExpiresAt = Utils.ConvertToDateTime(data.ExpiresAt);
+            ExpiresAt = FortniteUtils.ConvertToDateTime(data.ExpiresAt);
             RefreshToken = data.RefreshToken;
-            RefreshExpiresAt = Utils.ConvertToDateTime(data.RefreshExpiresAt);
+            RefreshExpiresAt = FortniteUtils.ConvertToDateTime(data.RefreshExpiresAt);
             SetRefreshTimer();
         } finally {
             RefreshLock.Release();

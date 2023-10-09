@@ -15,7 +15,7 @@ public class FortniteConfig {
     public bool KillOtherTokens { get; set; } = true;
 
     public string DefaultOutfit { get; set; } = "CID_001_Athena_Commando_F_Default";
-    public string DefaultBackpack { get; set; } = "BID_001_Default";
-    public string DefaultPickaxe { get; set; } = "Pickaxe_Lockjaw";
-    public string DefaultEmote { get; set; } = "EID_Floss";
+    public string DefaultBackpack { get; set; } = "";
+    public string DefaultPickaxe { get; set; } = "DefaultPickaxe";
+    public string DefaultEmote { get; set; } = "EID_DanceMoves";
 }

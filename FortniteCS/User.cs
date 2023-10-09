@@ -98,7 +98,7 @@ public class FortniteClientUser : FortniteUser {
         LastName = data.LastName;
         Email = data.Email;
         FailedLoginAttempts = data.FailedLoginAttempts;
-        LastLogin = Utils.ConvertToDateTime(data.LastLogin);
+        LastLogin = FortniteUtils.ConvertToDateTime(data.LastLogin);
         NumberOfDisplayNameChanges = data.NumberOfDisplayNameChanges;
         AgeGroup = data.AgeGroup;
         Headless = data.Headless;

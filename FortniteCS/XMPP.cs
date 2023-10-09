@@ -178,6 +178,7 @@ public class FortniteXMPP : IDisposable {
                         JoinMUC(payload.PartyId);
                         SendPresence(new());
                         // todo implement meta things
+                        member.Meta.Platform = Client.Config.Platform;
                         member.Meta.Outfit = Client.Config.DefaultOutfit;
                         member.Meta.Backpack = Client.Config.DefaultOutfit;
                         member.Meta.Pickaxe = Client.Config.DefaultPickaxe;
