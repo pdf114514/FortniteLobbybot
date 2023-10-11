@@ -341,8 +341,8 @@ public class FortnitePartyMemberMeta : MetaDict {
     private uint GetUint(string key, string? prefix = "Default") => uint.Parse(this.GetValueOrDefault(prefix is not null ? $"{prefix}:{key}_u" : $"{key}_U") ?? "0");
     private void SetUint(string key, uint value, string? prefix = "Default") => this[prefix is not null ? $"{prefix}:{key}_u" : $"{key}_U"] = value.ToString();
 
-    private T GetObject<T>(string key, string? prefix = "Default") where T : class, new() => JsonSerializer.Deserialize<Dictionary<string, T>>(this.GetValueOrDefault(prefix is not null ? $"{prefix}:{key}" : $"{key}_j") ?? string.Empty)?.GetValueOrDefault(key) ?? new();
-    private void SetObject<T>(string key, T value, string? prefix = "Default") where T : class, new() => this[prefix is not null ? $"{prefix}:{key}" : $"{key}_j"] = JsonSerializer.Serialize(new Dictionary<string, T>() { { key, value } });
+    private T GetObject<T>(string key, string? prefix = "Default") where T : class, new() => JsonSerializer.Deserialize<Dictionary<string, T>>(this.GetValueOrDefault(prefix is not null ? $"{prefix}:{key}_j" : $"{key}_j") ?? string.Empty)?.GetValueOrDefault(key) ?? new();
+    private void SetObject<T>(string key, T value, string? prefix = "Default") where T : class, new() => this[prefix is not null ? $"{prefix}:{key}_j" : $"{key}_j"] = JsonSerializer.Serialize(new Dictionary<string, T>() { { key, value } });
 
     public List<object> ArbitraryCustomDataStore { get => GetObject<List<object>>(nameof(ArbitraryCustomDataStore)); set => SetObject(nameof(ArbitraryCustomDataStore), value); }
     public FortniteAthenaBannerInfoMeta AthenaBannerInfo { get => GetObject<FortniteAthenaBannerInfoMeta>(nameof(AthenaBannerInfo)); set => SetObject(nameof(AthenaBannerInfo), value); }
@@ -496,10 +496,11 @@ public class FortniteClientPartyMember : FortnitePartyMember {
     public FortniteClientPartyMember(FortniteParty party, FortnitePartyMemberJoinedData data) : base(party, data) => Initialize();
 
     private void Initialize() {
-        Meta.Add("urn:epic:member:dn_s", Party.Client.User.DisplayName);
+        // ?
+        if (!Meta.ContainsKey("urn:epic:member:dn_s")) Meta.Add("urn:epic:member:dn_s", Party.Client.User.DisplayName);
     }
 
-    public async void SendPatch(MetaDict updated) {
+    public async Task SendPatch(MetaDict updated) {
         var request = new HttpRequestMessage(HttpMethod.Patch, $"https://party-service-prod.ol.epicgames.com/party/api/v1/Fortnite/parties/{Party.PartyId}/members/{AccountId}/meta");
         request.Headers.Add("Authorization", $"bearer {Party.Client.Session.AccessToken}");
         request.Content = new StringContent(JsonSerializer.Serialize(new {
@@ -508,8 +509,16 @@ public class FortniteClientPartyMember : FortnitePartyMember {
             update = updated,
         }), Encoding.UTF8, "application/json");
         var response = await Party.Client.Http.SendAsync(request);
-        if (!response.IsSuccessStatusCode) throw new Exception($"Failed to send patch: {response.StatusCode}");
+        if (!response.IsSuccessStatusCode) {
+            // throw new Exception($"Failed to send patch: {response.StatusCode}");\
+            Console.WriteLine($"Failed to send patch: {response.StatusCode}\n{await response.Content.ReadAsStringAsync()}");
+        }
         Revision++;
+    }
+
+    public Task SetEmote(string eid) {
+        Meta.Emote = eid;
+        return SendPatch(new() { ["Default:FrontendEmote_j"] = Meta["Default:FrontendEmote_j"] });
     }
 }
 
@@ -562,7 +571,7 @@ public class FortniteParty {
             AcceptingMembers = true
         };
         _Members = new();
-        foreach (var member in data.Members) _Members.Add(new(this, member));
+        foreach (var member in data.Members) _Members.Add(member.AccountId == Client.User.AccountId ? new FortniteClientPartyMember(this, member): new(this, member));
         Meta = data.Meta;
         Invites = data.Invites.Select(x => new FortnitePartyInvite(x)).ToList();
         Revision = data.Revision;
@@ -591,6 +600,8 @@ public class FortniteParty {
 public class FortniteClientParty : FortniteParty {
     public FortniteClientParty(FortniteClient client, FortnitePartyData data) : base(client, data) {}
     public FortniteClientParty(FortniteClient client, FortniteParty party) : base(client, party) {}
+
+    public FortniteClientPartyMember Me => (FortniteClientPartyMember)Members[Client.User.AccountId];
 }
 
 public class FortnitePartyJoinRequest {
