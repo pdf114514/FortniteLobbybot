@@ -29,6 +29,7 @@ public class Program {
             client.XMPP.SendMessage(client.Party!.PartyId, $"Hello {(member.AccountId == client.User.AccountId ? "I'm here" : member.DisplayName)}!");
         };
         client.PartyMemberLeft += member => Console.WriteLine($"{member.DisplayName} left the party!");
+        client.PartyMemberEmoteUpdated += async member => await client.Party!.Me.SendPatch(new() { ["Default:FrontendEmote_j"] = member.Meta["Default:FrontendEmote_j"] }); // copys emote :D
         client.Start().Wait();
         Console.WriteLine("Press enter to exit");
         Console.ReadLine();

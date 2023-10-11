@@ -74,7 +74,7 @@ public partial class FortniteClient {
     // public event Action<FortnitePartyMember>? PartyMemberDisconnected;
     // public event Action<FortnitePartyMember>? PartyMemberPromoted;
     // public event Action<FortnitePartyMember>? PartyMemberOutfitUpdated;
-    // public event Action<FortnitePartyMember>? PartyMemberEmoteUpdated;
+    public event Action<FortnitePartyMember>? PartyMemberEmoteUpdated;
     // public event Action<FortnitePartyMember>? PartyMemberBackpackUpdated;
     // public event Action<FortnitePartyMember>? PartyMemberPickaxeUpdated;
     // public event Action<FortnitePartyMember>? PartyMemberReadinessUpdated;
@@ -231,4 +231,18 @@ public partial class FortniteClient {
         Party?._Members.Remove(member);
         PartyMemberKicked?.Invoke(member);
     }
+
+    // PartyMemberDisconnected
+    // PartyMemberPromoted
+    // PartyMemberOutfitUpdated
+
+    internal void OnPartyMemberEmoteUpdated(FortnitePartyMember member) {
+        Logging.Debug($"Party member emote updated {member.DisplayName}");
+        PartyMemberEmoteUpdated?.Invoke(member);
+    }
+
+    // PartyMemberBackpackUpdated
+    // PartyMemberPickaxeUpdated
+    // PartyMemberReadinessUpdated
+    // PartyMemberMatchStateUpdated
 }

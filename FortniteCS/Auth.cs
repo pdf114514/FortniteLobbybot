@@ -64,6 +64,7 @@ public abstract class AuthBase<T1, T2> where T1 : AuthSession<T2> where T2 : Aut
     public abstract Task<T1> Login();
 
     protected async Task<T1> Authenticate(Dictionary<string, string> body) {
+        Logging.Debug($"Class {GetType().Name} authenticating with {Client.ClientId}...");
         var request = new HttpRequestMessage(HttpMethod.Post, "https://account-public-service-prod.ol.epicgames.com/account/api/oauth/token");
         request.Headers.Add("Authorization", $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"{Client.ClientId}:{Client.Secret}"))}");
         if (!body.Keys.Contains("token_type")) body.Add("token_type" , "eg1");
@@ -75,6 +76,7 @@ public abstract class AuthBase<T1, T2> where T1 : AuthSession<T2> where T2 : Aut
         }
         var data = JsonSerializer.Deserialize<T2>(await response.Content.ReadAsStringAsync()) ?? throw new Exception("Failed to deserialize authentication data");
         var session = Activator.CreateInstance(typeof(T1), data, Client.Secret) as T1 ?? throw new Exception("Failed to create authentication session");
+        Logging.Debug($"Class {GetType().Name} authenticated with {Client.ClientId}");
         return session;
     }
 }
@@ -122,7 +124,7 @@ public class DeviceAuth : AuthBase<FortniteAuthSession, FortniteAuthData> {
             { "secret", Secret }
         });
         Client = prevClient;
-        return await session.SwitchClient(Client);
+        return prevClient == AuthClients.FortniteIOSGameClient ? session : await session.SwitchClient(Client);
     }
 }
 
@@ -207,6 +209,7 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
 
     public async void Refresh() {
         await RefreshLock.WaitAsync();
+        Logging.Debug($"{AccountId} / {DisplayName} refreshing authentication...");
         try {
             RefreshTimer?.Dispose();
             var request = new HttpRequestMessage(HttpMethod.Post, "https://account-public-service-prod.ol.epicgames.com/account/api/oauth/token");
@@ -224,6 +227,7 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
             RefreshToken = data.RefreshToken;
             RefreshExpiresAt = FortniteUtils.ConvertToDateTime(data.RefreshExpiresAt);
             SetRefreshTimer();
+            Logging.Debug($"{AccountId} / {DisplayName} refreshed authentication");
         } finally {
             RefreshLock.Release();
         }

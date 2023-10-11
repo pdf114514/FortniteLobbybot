@@ -175,6 +175,7 @@ public class FortniteXMPP : IDisposable {
                     var member = new FortniteClientPartyMember(Client.Party, payload);
                     if (payload.AccountId == Client.User.AccountId) {
                         Logging.Debug($"Joined party {payload.PartyId}");
+                        await Client.InitializeParty(false, false);
                         JoinMUC(payload.PartyId);
                         SendPresence(new());
                         // todo implement meta things
@@ -183,7 +184,7 @@ public class FortniteXMPP : IDisposable {
                         member.Meta.Backpack = Client.Config.DefaultOutfit;
                         member.Meta.Pickaxe = Client.Config.DefaultPickaxe;
 
-                        member.SendPatch(member.Meta);
+                        await member.SendPatch(member.Meta);
                     }
 
                     if (Client.Party.Members.ContainsKey(payload.AccountId)) {
@@ -218,6 +219,20 @@ public class FortniteXMPP : IDisposable {
                         Logging.Warn($"party is {payload.PartyId} but member {payload.AccountId} does not exist");
                         return;
                     }
+
+                    var member = Client.Party.Members[payload.AccountId];
+                    foreach (var (key, value) in payload.MemberStateUpdated) {
+                        member.Meta[key] = value;
+                    }
+
+                    if (payload.AccountId == Client.User.AccountId) {
+                        Client.Party.Me.Revision = payload.Revision;
+                        Client.Party.Me.UpdatedAt = FortniteUtils.ConvertToDateTime(payload.UpdatedAt);
+                        Logging.Debug("party member state updated of myself, ignoring event");
+                        return;
+                    }
+
+                    if (payload.MemberStateUpdated.ContainsKey("Default:FrontendEmote_j")) Client.OnPartyMemberEmoteUpdated(member);
 
                     Client.OnPartyMemberUpdated(Client.Party.Members[payload.AccountId]);
                     break;
