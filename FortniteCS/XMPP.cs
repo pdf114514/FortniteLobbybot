@@ -172,20 +172,22 @@ public class FortniteXMPP : IDisposable {
                         return;
                     }
 
-                    var member = new FortniteClientPartyMember(Client.Party, payload);
+                    FortnitePartyMember member;
                     if (payload.AccountId == Client.User.AccountId) {
                         Logging.Debug($"Joined party {payload.PartyId}");
                         await Client.InitializeParty(false, false);
+                        var clientPartyMember = new FortniteClientPartyMember(Client.Party, payload);
+                        member = clientPartyMember;
                         JoinMUC(payload.PartyId);
                         SendPresence(new());
                         // todo implement meta things
-                        member.Meta.Platform = Client.Config.Platform;
-                        member.Meta.Outfit = Client.Config.DefaultOutfit;
-                        member.Meta.Backpack = Client.Config.DefaultOutfit;
-                        member.Meta.Pickaxe = Client.Config.DefaultPickaxe;
+                        clientPartyMember.Meta.Platform = Client.Config.Platform;
+                        clientPartyMember.Meta.Outfit = Client.Config.DefaultOutfit;
+                        clientPartyMember.Meta.Backpack = Client.Config.DefaultOutfit;
+                        clientPartyMember.Meta.Pickaxe = Client.Config.DefaultPickaxe;
 
-                        await member.SendPatch(member.Meta);
-                    }
+                        await clientPartyMember.SendPatch(member.Meta);
+                    } else member = new FortnitePartyMember(Client.Party, payload);
 
                     if (Client.Party.Members.ContainsKey(payload.AccountId)) {
                         Logging.Warn($"Joined party {payload.PartyId} but member {payload.AccountId} already exists");

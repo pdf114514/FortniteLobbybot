@@ -86,9 +86,9 @@ public partial class FortniteClient {
         var methods = t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
         foreach (var method in methods) {
             if (method.GetCustomAttribute<FortniteClientEventAttribute>() is var attribute && attribute is not null) {
-                var @eventName = attribute.Event;
-                if (t.GetEvent(@eventName.ToString()) is var @event && @event is null) {
-                    Logging.Debug($"Event {@eventName} does not exist!");
+                var eventName = attribute.Event;
+                if (t.GetEvent(eventName.ToString()) is var @event && @event is null) {
+                    Logging.Debug($"Event {eventName} does not exist!");
                     continue;
                 }
                 var @delegate = Delegate.CreateDelegate(@event.EventHandlerType!, this, method);
@@ -104,7 +104,7 @@ public partial class FortniteClient {
 
     internal async Task<T> WaitForEvent<T>(FortniteClientEvent eventName, Predicate<T> condition, TimeSpan? timeout = null) {
         var @event = GetType().GetEvent(eventName.ToString());
-        if (@event is null) throw new Exception($"Event {@eventName} does not exist!");
+        if (@event is null) throw new Exception($"Event {eventName} does not exist!");
         var tcs = new TaskCompletionSource<T>();
         void handler(T obj) {
             if (condition(obj)) {
