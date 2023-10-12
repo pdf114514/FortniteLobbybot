@@ -516,8 +516,32 @@ public class FortniteClientPartyMember : FortnitePartyMember {
         Revision++;
     }
 
-    public Task SetEmote(string eid) {
-        Meta.Emote = eid;
+    public Task SetOutfit(string cid, string ekey = "") {
+        if (cid.StartsWith("/")) Meta.AthenaCosmeticLoadout.CharacterDef = cid;
+        else Meta.Outfit = cid;
+        Meta.AthenaCosmeticLoadout.CharacterEKey = ekey;
+        return SendPatch(new() { ["Default:AthenaCosmeticLoadout_j"] = Meta["Default:AthenaCosmeticLoadout_j"] });
+    }
+
+    public Task SetBackpack(string bid, string ekey = "") {
+        if (bid.StartsWith("/")) Meta.AthenaCosmeticLoadout.BackpackDef = bid;
+        else Meta.Backpack = bid;
+        Meta.AthenaCosmeticLoadout.BackpackEKey = ekey;
+        return SendPatch(new() { ["Default:AthenaCosmeticLoadout_j"] = Meta["Default:AthenaCosmeticLoadout_j"] });
+    }
+
+    public Task SetPickaxe(string pid, string ekey = "") {
+        if (pid.StartsWith("/")) Meta.AthenaCosmeticLoadout.PickaxeDef = pid;
+        else Meta.Pickaxe = pid;
+        Meta.AthenaCosmeticLoadout.PickaxeEKey = ekey;
+        return SendPatch(new() { ["Default:AthenaCosmeticLoadout_j"] = Meta["Default:AthenaCosmeticLoadout_j"] });
+    }
+
+    public Task SetEmote(string eid, int section = -1, string ekey = "") {
+        if (eid.StartsWith("/")) Meta.FrontendEmote.EmoteItemDef = eid;
+        else Meta.Emote = eid;
+        Meta.FrontendEmote.EmoteSection = section;
+        Meta.FrontendEmote.EmoteEKey = ekey;
         return SendPatch(new() { ["Default:FrontendEmote_j"] = Meta["Default:FrontendEmote_j"] });
     }
 }
