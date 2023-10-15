@@ -7,11 +7,24 @@ namespace Lobbybot.Server.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase {
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] Dictionary<string, string> request) {
-        if (request.TryGetValue("password", out var password) && password == LobbybotAuthenticationMiddleware.Config.Web.Password) {
+    public IActionResult Login([FromBody] Dictionary<string, string> request) {
+        if (request.TryGetValue("password", out var password) && password == Config.Web.Password) {
             Response.Cookies.Append("sessionId", LobbybotAuthenticationMiddleware.NewSessionId(), new() { Expires = DateTime.Now.AddDays(7) });
             return Ok();
         }
+        return Unauthorized();
+    }
+
+    [HttpGet("logout")]
+    public IActionResult Logout() {
+        if (!Request.Cookies.TryGetValue("sessionId", out var sessionId)) return Unauthorized();
+        Response.Cookies.Delete("sessionId");
+        return Ok();
+    }
+
+    [HttpGet("status")]
+    public IActionResult Status() {
+        if (!Config.Web.PasswordEnabled || Request.Cookies.TryGetValue("sessionId", out var sessionId) && LobbybotAuthenticationMiddleware.AuthenticatedSessionIds.Contains(sessionId)) return Ok();
         return Unauthorized();
     }
 }

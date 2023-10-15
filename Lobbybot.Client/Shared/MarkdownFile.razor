@@ -1,23 +1,27 @@
 @using Markdig
 @using System.Reflection
 
-@Rendered
+@RenderedHtml
 
 @code {
     [Parameter]
     public string? Filename { get; set; }
 
-    public MarkupString Rendered { get; private set; }
+    private static readonly Regex AnchorPattern = new Regex(@"<a href=""([^""]*)""(.*?)>([^<]*)</a>", RegexOptions.Compiled);
+
+    public string Html { get; private set; } = string.Empty;
+    public MarkupString RenderedHtml { get => (MarkupString)Html; }
 
     protected override void OnInitialized() {
         var assembly = Assembly.GetExecutingAssembly();
         // foreach (var (key, value) in assembly.GetManifestResourceNames().Select(x => (x, x.Replace($"{assembly.GetName().Name}.", "")))) Console.WriteLine($"{key} => {value}");
         var resourceName = $"{assembly.GetName().Name}.{Filename!.Replace('/', '.')}";
         using var stream = assembly.GetManifestResourceStream(resourceName);
-        if (stream is null) Rendered = (MarkupString)$"The resource {resourceName} does not exist.";
-        else {
-            using var reader = new StreamReader(stream);
-            Rendered = (MarkupString)Markdown.ToHtml(reader.ReadToEnd());
+        if (stream is null) {
+            Html = $"<span>The resource {resourceName} does not exist.</span>";
+            return;
         }
+        using var reader = new StreamReader(stream);
+        Html = AnchorPattern.Replace(Markdown.ToHtml(reader.ReadToEnd()), "<a href=\"https://github.com/pdf114514/FortniteLobbybot/tree/main/$1\"target=\"_blank\"$2>$3</a>");
     }
 }

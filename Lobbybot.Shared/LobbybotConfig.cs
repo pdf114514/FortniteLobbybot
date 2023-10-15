@@ -6,5 +6,5 @@ public class LobbybotConfig {
 
 public class WebConfig {
     public bool PasswordEnabled { get; set; } = false;
-    public string Password { get; set; } = "";
+    public string Password { get; set; } = "password";
 }
