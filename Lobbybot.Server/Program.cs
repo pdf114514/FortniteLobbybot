@@ -1,3 +1,4 @@
+using Lobbybot.Server;
 using Microsoft.AspNetCore.ResponseCompression;
 
 namespace Lobbybot;
@@ -28,6 +29,8 @@ public static class ServerProgram {
         app.UseStaticFiles();
 
         app.UseRouting();
+
+        app.UseMiddleware<LobbybotAuthenticationMiddleware>();
 
 
         app.MapRazorPages();

@@ -1,0 +1,1 @@
+global using K = System.Text.Json.Serialization.JsonPropertyNameAttribute;

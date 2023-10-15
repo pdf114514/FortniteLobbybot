@@ -1,0 +1,11 @@
+@page "/docs/{language}/{filename}"
+
+<MarkdownFile Filename=@($"{Language}/{Filename}") />
+
+@code {
+    [Parameter]
+    public string? Language { get; set; }
+
+    [Parameter]
+    public string? Filename { get; set; }
+}
