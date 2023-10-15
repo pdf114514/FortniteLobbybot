@@ -30,10 +30,8 @@ public static class ServerProgram {
 
         app.UseRouting();
 
-        app.UseMiddleware<LobbybotAuthenticationMiddleware>();
-
-
         app.MapRazorPages();
+        app.UseMiddleware<LobbybotAuthenticationMiddleware>();
         app.MapControllers();
         app.MapFallbackToFile("index.html");
 
