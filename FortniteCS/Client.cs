@@ -41,8 +41,8 @@ public partial class FortniteClient : IDisposable {
     }
 
     public void Dispose() {
-        Session?.Dispose();
         XMPP?.Dispose();
+        Session?.Dispose();
         Http?.Dispose();
         Logging.Debug("Client disposed!");
     }

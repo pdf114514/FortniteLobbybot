@@ -1,5 +1,6 @@
 {
     "Home": "Home",
-    "SignIn": "Sign In",
+    "Login": "Login",
+    "Logout": "Logout",
     "Settings": "Settings"
 }
