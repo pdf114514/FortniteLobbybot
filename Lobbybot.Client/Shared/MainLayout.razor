@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@using System.Reflection
 
 <style>
     :root {
@@ -293,15 +294,9 @@
                         </a>
                     </li>
                     <li class="HeaderItem HeaderItemFull"></li>
-                    <AuthorizeView>
-                        <Authorized>
-                            <li class="HeaderItem">
-                                <span>*Something goes here*</span>
-                            </li>
-                        </Authorized>
-                        <NotAuthorized>
-                        </NotAuthorized>
-                    </AuthorizeView>
+                    <li class="HeaderItem">
+                        <span title="@GetVersion(false)">Ver: @GetVersion()</span>
+                    </li>
                 </ul>
             </nav>
         </header>
@@ -433,7 +428,7 @@
     </div>
 
     <main>
-        <article class="content px-2" style="display: flex; height: calc(100vh - var(--HeaderHeight)); width: calc(100vw - var(--SideNavWidth)); flex-direction: column;">
+        <article class="content px-2" style="display: flex; height: calc(100vh - var(--HeaderHeight)); width: calc(100vw - var(--SideNavWidth)); flex-direction: column; position: absolute; left: var(--SideNavWidth); top: var(--HeaderHeight);">
             @Body
         </article>
     </main>
@@ -446,8 +441,18 @@
     bool PasswordEnabled = false;
 
     protected override async Task OnInitializedAsync() {
-        var config = await Api.GetConfig();
-        PasswordEnabled = config.Web.PasswordEnabled;
+        Console.WriteLine($"Version: {GetVersion()}");
+        if (await Auth.IsAuthenticated()) {
+            var config = await Api.GetConfig();
+            PasswordEnabled = config.Web.PasswordEnabled;
+        } else PasswordEnabled = true;
         await base.OnInitializedAsync();
+    }
+
+    string GetVersion(bool shortVersion = true) {
+        var informationalVersion = Assembly.GetExecutingAssembly().GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>().InformationalVersion;
+        if (!shortVersion) return informationalVersion;
+        var splitted = informationalVersion.Split('+');
+        return $"{splitted[0]}+{splitted[1][..7]}";
     }
 }
