@@ -7,7 +7,7 @@
     [Parameter]
     public string? Filename { get; set; }
 
-    private static readonly Regex AnchorPattern = new Regex(@"<a href=""([^""]*)""(.*?)>([^<]*)</a>", RegexOptions.Compiled);
+    private static readonly Regex AnchorPattern = new Regex(@"<a href=""((?!http)[^""]*)""(.*?)>([^<]*)</a>", RegexOptions.Compiled);
 
     public string Html { get; private set; } = string.Empty;
     public MarkupString RenderedHtml { get => (MarkupString)Html; }
@@ -22,6 +22,7 @@
             return;
         }
         using var reader = new StreamReader(stream);
-        Html = AnchorPattern.Replace(Markdown.ToHtml(reader.ReadToEnd()), "<a href=\"https://github.com/pdf114514/FortniteLobbybot/tree/main/$1\"target=\"_blank\"$2>$3</a>");
+        // Todo open discord invite on a new tab
+        Html = AnchorPattern.Replace(Markdown.ToHtml(reader.ReadToEnd()), "<a href=\"https://github.com/pdf114514/FortniteLobbybot/tree/main/$1\" target=\"_blank\" rel=\"noopener noreferrer\"$2>$3</a>");
     }
 }
