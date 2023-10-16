@@ -9,4 +9,33 @@
   <ItemGroup>
     <SupportedPlatform Include="browser" />
   </ItemGroup>
+
+  <!-- https://zenn.dev/onozaty/articles/embed-git-version-net-framework -->
+  <!-- https://github.com/onozaty/embed-version-samples/blob/main/CSharp_MSBuildTasks/CSharp/CSharp.csproj -->
+  <Target Name="BeforeBuild">
+    <MakeDir Directories="Properties" />
+    <GitVersion ShortLength="8">
+      <Output TaskParameter="CommitHash" PropertyName="CommitHash" />
+    </GitVersion>
+    <GitDescribe Command="describe --first-parent" LightWeight="True" Match="v[0-9]*">
+      <Output TaskParameter="Tag" PropertyName="VersionTag" />
+    </GitDescribe>
+    <RegexReplace Input="$(VersionTag)" Expression="v([0-9\.]+).*" Replacement="$1">
+      <Output TaskParameter="Output" PropertyName="StrictVersion" />
+    </RegexReplace>
+    <AssemblyInfo CodeLanguage="CS"
+      OutputFile="Properties\AssemblyInfo.cs"
+      AssemblyTitle="Lobbybot"
+      AssemblyDescription="A Fortnite lobbybot"
+      AssemblyCompany=""
+      AssemblyProduct="Lobbybot"
+      AssemblyCopyright="pdf114514 © 2023"
+      AssemblyTrademark=""
+      AssemblyCulture=""
+      ComVisible="false"
+      Guid="ACE59F8A-DF1C-4B7F-8818-AF235B76FB2F"
+      AssemblyVersion="$(StrictVersion)"
+      AssemblyFileVersion="$(StrictVersion)"
+      AssemblyInformationalVersion="$(VersionTag.Substring(1)).$(CommitHash)" />
+  </Target>
 </Project>

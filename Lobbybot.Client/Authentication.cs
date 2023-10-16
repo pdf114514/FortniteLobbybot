@@ -9,8 +9,11 @@ public class LobbybotAuthenticationStateProvider : AuthenticationStateProvider {
 
     public LobbybotAuthenticationStateProvider(HttpClient http) => Http = http;
 
+    private bool? _IsAuthenticated;
+    public async Task<bool> IsAuthenticated() => _IsAuthenticated ??= (await Http.GetAsync("api/auth/status")).IsSuccessStatusCode;
+
     public override async Task<AuthenticationState> GetAuthenticationStateAsync() {
-        var authenticated = (await Http.GetAsync("api/auth/status")).IsSuccessStatusCode;
+        var authenticated = await IsAuthenticated();
         if (authenticated) {
             var claims = new List<Claim> { new(ClaimTypes.Name, "Lobbybot") };
             return new(new(new ClaimsIdentity(claims, "Lobbybot")));

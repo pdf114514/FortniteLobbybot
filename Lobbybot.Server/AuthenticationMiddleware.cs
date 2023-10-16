@@ -20,7 +20,7 @@ public class LobbybotAuthenticationMiddleware {
     }
 
     public async Task InvokeAsync(HttpContext context) {
-        if (Config.Web.PasswordEnabled && context.Request.Path.StartsWithSegments("/api")) {
+        if (Config.Web.PasswordEnabled && context.Request.Path.StartsWithSegments("/api") && !context.Request.Path.StartsWithSegments("/api/auth")) {
             if (!context.Request.Cookies.ContainsKey("sessionId") || !AuthenticatedSessionIds.Contains(context.Request.Cookies["sessionId"]!)) {
                 if (context.Request.Cookies.ContainsKey("password") && context.Request.Cookies["password"] == Config.Web.Password) {
                     var sessionId = Guid.NewGuid().ToString("N");
