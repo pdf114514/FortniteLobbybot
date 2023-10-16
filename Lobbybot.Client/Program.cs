@@ -19,6 +19,7 @@ public static class ClientProgram {
         builder.Services.AddAuthorizationCore();
         builder.Services.AddScoped<LobbybotAuthenticationStateProvider>(x => new(x.GetRequiredService<HttpClient>()));
         builder.Services.AddScoped<AuthenticationStateProvider>(x => x.GetRequiredService<LobbybotAuthenticationStateProvider>());
+        builder.Services.AddScoped<LobbybotApi>(x => new(x.GetRequiredService<HttpClient>(), x.GetRequiredService<LobbybotAuthenticationStateProvider>()));
 
         return builder.Build();
     }
