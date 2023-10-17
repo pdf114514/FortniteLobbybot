@@ -8,7 +8,6 @@ namespace Lobbybot.Client;
 
 public static class ClientProgram {
     public static WebAssemblyHost CreateHost(string[]? args = null) {
-        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
         var builder = WebAssemblyHostBuilder.CreateDefault(args ?? Array.Empty<string>());
         builder.RootComponents.Add<App>("#app");
         builder.RootComponents.Add<HeadOutlet>("head::after");

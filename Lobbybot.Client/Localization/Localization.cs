@@ -3,18 +3,13 @@ using System.Text.Json;
 
 namespace Lobbybot.Client;
 
-public class ESupportedLocalizations {
-    public const string EN = "en";
-    public const string JA = "ja";
-}
-
 public class Localization {
     private readonly Dictionary<string, string> _Localizations = new();
-    public string Language { get; private set; } = ESupportedLocalizations.EN;
+    public string Language { get; private set; } = "en";
 
-    public Localization(string language = ESupportedLocalizations.EN) => SwitchLanguage(language);
+    public Localization(string language = "en") => SwitchLanguage(language);
 
-    public void SwitchLanguage(string language = ESupportedLocalizations.EN) {
+    public void SwitchLanguage(string language = "en") {
         Language = language;
         var assembly = Assembly.GetExecutingAssembly();
         // <Assembly Name>.<Directory Name>.<File Name>
@@ -27,4 +22,9 @@ public class Localization {
     }
 
     public string this[string key] => _Localizations.GetValueOrDefault(key, $"MISSING: {key}");
+
+    public static string[] SupportedLanguages { get {
+        var assembly = Assembly.GetExecutingAssembly();
+        return assembly.GetManifestResourceNames().Where(x => x.StartsWith($"{assembly.GetName().Name}.Localization") && x.EndsWith(".json")).Select(x => x.Split(".")[^2]).ToArray();
+    } }
 }

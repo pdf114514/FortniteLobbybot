@@ -2,5 +2,11 @@
     "Home": "Home",
     "Login": "Login",
     "Logout": "Logout",
-    "Settings": "Settings"
+    "Settings": "Settings",
+    "Configuration": "Configuration",
+    "Language": "Language",
+    "Reload": "Reload",
+    "Commands": "Commands",
+    "Boot": "Boot",
+    "Bots": "Bots"
 }
