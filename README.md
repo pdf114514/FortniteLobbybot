@@ -4,7 +4,7 @@ A fortnite lobby bot made in C#
 [![Support server](https://discordapp.com/api/guilds/718709023427526697/widget.png?style=banner2)](https://discord.gg/NEnka5N)
 
 ## Install
-[Install](docs/en/setup.md "setup.md")
+[Install](docs/en/install.md "install.md")
 
 ## License
 [MIT license](LICENSE "LICENSE")

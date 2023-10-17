@@ -258,6 +258,36 @@
         padding: 8px 0;
     }
 
+    .Button {
+        color: #c9d1d9;
+        background-color: #21262d;
+        border-color: rgba(240,246,252,0.1) !important;
+        box-shadow: 0 0 transparent, 0 0 transparent;
+        transition: 80ms cubic-bezier(0.33, 1, 0.68, 1);
+        transition-property: color, background-color, box-shadow, border-color;
+        position: relative;
+        display: inline-block;
+        padding: 5px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 20px;
+        white-space: nowrap;
+        vertical-align: middle;
+        cursor: pointer;
+        -webkit-user-select: none;
+        user-select: none;
+        border: 1px solid;
+        border-radius: 6px;
+        appearance: none;
+        text-transform: none;
+    }
+    .Button:hover {
+        background-color: #30363d;
+        border-color: #8b949e;
+        transition-duration: .1s;
+        text-decoration: none;
+    }
+
     @@media screen and (max-width: 480px) {
         :root {
             --SideNavWidth: 0px;
@@ -332,11 +362,11 @@
                                             <div class="SideNavItemInner">
                                                 <div class="SideNavItemIconWrapper">
                                                     <span class="SideNavItemIcon">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M12 2.5a5.5 5.5 0 0 1 3.096 10.047 9.005 9.005 0 0 1 5.9 8.181.75.75 0 1 1-1.499.044 7.5 7.5 0 0 0-14.993 0 .75.75 0 0 1-1.5-.045 9.005 9.005 0 0 1 5.9-8.18A5.5 5.5 0 0 1 12 2.5ZM8 8a4 4 0 1 0 8 0 4 4 0 0 0-8 0Z"></path></svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" color="#fff" class="icon icon-tabler icon-tabler-adjustments-horizontal" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" style="fill: none;"></path><path d="M14 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" style="fill: none;"></path><path d="M4 6l8 0"></path><path d="M16 6l4 0"></path><path d="M8 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" style="fill: none;"></path><path d="M4 12l2 0"></path><path d="M10 12l10 0"></path><path d="M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" style="fill: none;"></path><path d="M4 18l11 0"></path><path d="M19 18l1 0"></path></svg>
                                                     </span>
-                                                    <span class="SideNavItemTextUnderIcon">@L["SECTION1"]</span>
+                                                    <span class="SideNavItemTextUnderIcon">@L["Configuration"]</span>
                                                 </div>
-                                                <span class="SideNavItemText">@L["SECTION1"]</span>
+                                                <span class="SideNavItemText">@L["Configuration"]</span>
                                             </div>
                                         </a>
                                     </div>
@@ -349,11 +379,45 @@
                                             <div class="SideNavItemInner">
                                                 <div class="SideNavItemIconWrapper">
                                                     <span class="SideNavItemIcon">
-                                                        <svg viewBox="0 0 22 22" id="meteor-icon-kit__regular-tools-alt" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path fill-rule="evenodd" clip-rule="evenodd" d="M10 17.4142L6.70711 20.7071C6.51957 20.8946 6.26522 21 6 21H2C1.44772 21 1 20.5523 1 20V16C1 15.7348 1.10536 15.4804 1.29289 15.2929L4.58579 12L0.29289 7.70711C-0.097631 7.31658 -0.097631 6.68342 0.29289 6.29289L6.29289 0.29289C6.68342 -0.097631 7.31658 -0.097631 7.70711 0.29289L12 4.58579L16.2929 0.29289C16.6834 -0.097631 17.3166 -0.097631 17.7071 0.29289L21.7071 4.29289C22.0976 4.68342 22.0976 5.31658 21.7071 5.70711L17.4142 10L21.7071 14.2929C22.0976 14.6834 22.0976 15.3166 21.7071 15.7071L15.7071 21.7071C15.3166 22.0976 14.6834 22.0976 14.2929 21.7071L10 17.4142zM11.4142 16L12.5 17.0858L13.2929 16.2929C13.6834 15.9024 14.3166 15.9024 14.7071 16.2929C15.0976 16.6834 15.0976 17.3166 14.7071 17.7071L13.9142 18.5L15 19.5858L19.5858 15L16 11.4142L11.4142 16zM14.5 4.91421L3 16.4142V19H5.58579L17.0858 7.5L14.5 4.91421zM15.9142 3.5L18.5 6.08579L19.5858 5L17 2.41421L15.9142 3.5zM10.5858 6L7 2.41421L2.41421 7L3.5 8.08579L4.29289 7.29289C4.68342 6.90237 5.31658 6.90237 5.70711 7.29289C6.09763 7.68342 6.09763 8.31658 5.70711 8.70711L4.91421 9.5L6 10.5858L10.5858 6z" fill="#000000"></path></g></svg>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" color="#fff" class="icon icon-tabler icon-tabler-message-2" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" style="fill: none;"></path><path d="M8 9h8"></path><path d="M8 13h6"></path><path d="M9 18h-3a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-3l-3 3l-3 -3z" style="fill: none;"></path></svg>
                                                     </span>
-                                                    <span class="SideNavItemTextUnderIcon">@L["SECTION2"]</span>
+                                                    <span class="SideNavItemTextUnderIcon">@L["Commands"]</span>
                                                 </div>
-                                                <span class="SideNavItemText">@L["SECTION2"]</span>
+                                                <span class="SideNavItemText">@L["Commands"]</span>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="SideNavItem">
+                                <div class=@(SideNavCollapsed ? "SideNavItemCollapsibleWrapper SideNavItemCollapsibleWrapper-Collapsed" : "SideNavItemCollapsibleWrapper")>
+                                    <div class="SideNavItemCollapsibleWrapperInner">
+                                        <a href="">
+                                            <div class="SideNavItemInner">
+                                                <div class="SideNavItemIconWrapper">
+                                                    <span class="SideNavItemIcon">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" color="#fff" class="icon icon-tabler icon-tabler-notes" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" style="fill: none;"></path><path d="M5 3m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" style="fill: none;"></path><path d="M9 7l6 0"></path><path d="M9 11l6 0"></path><path d="M9 15l4 0"></path></svg>
+                                                    </span>
+                                                    <span class="SideNavItemTextUnderIcon">@L["Boot"]</span>
+                                                </div>
+                                                <span class="SideNavItemText">@L["Boot"]</span>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="SideNavItem">
+                                <div class=@(SideNavCollapsed ? "SideNavItemCollapsibleWrapper SideNavItemCollapsibleWrapper-Collapsed" : "SideNavItemCollapsibleWrapper")>
+                                    <div class="SideNavItemCollapsibleWrapperInner">
+                                        <a href="">
+                                            <div class="SideNavItemInner">
+                                                <div class="SideNavItemIconWrapper">
+                                                    <span class="SideNavItemIcon">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" color="#fff" class="icon icon-tabler icon-tabler-robot" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" style="fill: none;"></path><path d="M6 4m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z" style="fill: none;"></path><path d="M12 2v2"></path><path d="M9 12v9"></path><path d="M15 12v9"></path><path d="M5 16l4 -2"></path><path d="M15 14l4 2"></path><path d="M9 18h6"></path><path d="M10 8v.01"></path><path d="M14 8v.01"></path></svg>
+                                                    </span>
+                                                    <span class="SideNavItemTextUnderIcon">@L["Bots"]</span>
+                                                </div>
+                                                <span class="SideNavItemText">@L["Bots"]</span>
                                             </div>
                                         </a>
                                     </div>
@@ -447,7 +511,7 @@
                 }
             </select>
         </p>
-        <button class="btn" type="button" @onclick=@(() => JS.InvokeVoid("location.reload"))>@L["Reload"]</button>
+        <button class="Button" type="button" @onclick=@(() => JS.InvokeVoid("location.reload"))>@L["Reload"]</button>
     </Modal>
 </div>
 
@@ -457,10 +521,7 @@
     bool SettingsVisible = false;
     bool PasswordEnabled = false;
 
-    string[] SupportedLanguages = new string[] {
-        "en",
-        "ja"
-    };
+    string[] SupportedLanguages => Localization.SupportedLanguages;
     string Language { get => L.Language; set {
         JS.LSSetItem("language", value);
         L.SwitchLanguage(value);
@@ -468,7 +529,7 @@
     } }
 
     protected override async Task OnInitializedAsync() {
-        Console.WriteLine($"Version: {GetVersion()}");
+        Console.WriteLine($"Version: {GetVersion(false)}");
         if (await Auth.IsAuthenticated()) {
             var config = await Api.GetConfig();
             PasswordEnabled = config.Web.PasswordEnabled;
