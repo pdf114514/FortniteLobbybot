@@ -1,0 +1,87 @@
+<style>
+    .Modal {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        background-color: rgba(0, 0, 0, 0.5);
+        transition: opacity .5s cubic-bezier(.33, 1, .68, 1), z-index .5s cubic-bezier(.33, 1, .68, 1);
+        opacity: 1;
+        z-index: 10;
+    }
+    .ModalClosed {
+        opacity: 0;
+        z-index: -1;
+    }
+
+    .ModalClosed * {
+        user-select: none;
+        -moz-user-select: none;
+        -webkit-user-select: none;
+    }
+
+    .ModalContent {
+        color: var(--color-btn-primary-text);
+        margin: 20% auto;
+        width: 50%;
+        box-shadow: 0 5px 8px 0 rgba(0, 0, 0, .2), 0 7px 20px 0 rgba(0, 0, 0, .17);
+    }
+
+    .ModalHeader {
+        background-color: var(--color-canvas-default);
+        padding: 3px 15px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 1.2em;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    .ModalBody {
+        background-color: var(--color-canvas-overlay);
+        padding: 10px 20px;
+        overflow: auto;
+        max-height: 50vh;
+    }
+
+    .ModalCloseButton {
+        position: relative;
+        right: 0;
+        padding-right: 16px;
+        padding-left: 16px;
+    }
+
+    @@media screen and (max-width: 480px) {
+        .ModalContent {
+            width: 90%;
+        }
+    }
+</style>
+
+<div class=@(Visible ? "Modal" : "Modal ModalClosed") @onclick="OnClose">
+    <div class="ModalContent">
+        <div class="ModalHeader" @onclick:stopPropagation="true">
+            @Title
+            <span class="ModalCloseButton" @onclick="OnClose"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M5.72 5.72a.75.75 0 0 1 1.06 0L12 10.94l5.22-5.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L13.06 12l5.22 5.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L12 13.06l-5.22 5.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L10.94 12 5.72 6.78a.75.75 0 0 1 0-1.06Z"></path></svg></span>
+        </div>
+        <div class="ModalBody" @onclick:stopPropagation="true">
+            @ChildContent
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public bool Visible { get; set; } = false;
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+}

@@ -389,7 +389,7 @@
                             <li class="SideNavItem">
                                 <div class=@(SideNavCollapsed ? "SideNavItemCollapsibleWrapper SideNavItemCollapsibleWrapper-Collapsed" : "SideNavItemCollapsibleWrapper")>
                                     <div class="SideNavItemCollapsibleWrapperInner">
-                                        <span style="user-select: none; cursor: pointer;" @onclick=@(() => SignOutVisible = true)>
+                                        <span style="user-select: none; cursor: pointer;" @onclick=@(() => LogoutVisible = true)>
                                             <div class="SideNavItemInner">
                                                 <div class="SideNavItemIconWrapper">
                                                     <span class="SideNavItemIcon">
@@ -432,13 +432,40 @@
             @Body
         </article>
     </main>
+
+    <Modal Title=@L["Logout"] Visible=LogoutVisible OnClose=@(() => LogoutVisible = false)>
+        <p>@L["LogoutConfirm"]</p>
+        <button class="btn" @onclick=@(async () => { await Auth.Logout(); LogoutVisible = false; })>@L["Logout"]</button>
+    </Modal>
+
+    <Modal Title=@L["Settings"] Visible=SettingsVisible OnClose=@(() => SettingsVisible = false)>
+        <p>
+            @L["Language"]:
+            <select @bind="Language">
+                @foreach (var language in SupportedLanguages) {
+                    <option value="@language">@string.Concat(language.ToUpper().Select(x => char.ConvertFromUtf32(x + 0x1F1A5))) @language</option>
+                }
+            </select>
+        </p>
+        <button class="btn" type="button" @onclick=@(() => JS.InvokeVoid("location.reload"))>@L["Reload"]</button>
+    </Modal>
 </div>
 
 @code {
     bool SideNavCollapsed = true;
-    bool SignOutVisible = false;
+    bool LogoutVisible = false;
     bool SettingsVisible = false;
     bool PasswordEnabled = false;
+
+    string[] SupportedLanguages = new string[] {
+        "en",
+        "ja"
+    };
+    string Language { get => L.Language; set {
+        JS.LSSetItem("language", value);
+        L.SwitchLanguage(value);
+        // StateHasChanged();
+    } }
 
     protected override async Task OnInitializedAsync() {
         Console.WriteLine($"Version: {GetVersion()}");

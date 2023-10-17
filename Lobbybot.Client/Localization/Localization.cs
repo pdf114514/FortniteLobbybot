@@ -10,10 +10,12 @@ public class ESupportedLocalizations {
 
 public class Localization {
     private readonly Dictionary<string, string> _Localizations = new();
+    public string Language { get; private set; } = ESupportedLocalizations.EN;
 
     public Localization(string language = ESupportedLocalizations.EN) => SwitchLanguage(language);
 
     public void SwitchLanguage(string language = ESupportedLocalizations.EN) {
+        Language = language;
         var assembly = Assembly.GetExecutingAssembly();
         // <Assembly Name>.<Directory Name>.<File Name>
         using var stream = assembly.GetManifestResourceStream($"{assembly.GetName().Name}.Localization.{language}.json") ?? throw new Exception($"Language {language} not found");
