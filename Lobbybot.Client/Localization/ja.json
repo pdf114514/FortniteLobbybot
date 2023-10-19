@@ -8,5 +8,7 @@
     "Reload": "再読み込み",
     "Commands": "コマンド",
     "Boot": "ブート",
-    "Bots": "ボット"
+    "Bots": "ボット",
+    "Password": "パスワード",
+    "LogoutConfirm": "本当にログアウトしますか?"
 }

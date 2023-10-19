@@ -8,5 +8,7 @@
     "Reload": "Reload",
     "Commands": "Commands",
     "Boot": "Boot",
-    "Bots": "Bots"
+    "Bots": "Bots",
+    "Password": "Password",
+    "LogoutConfirm": "Are you sure you want to logout?"
 }

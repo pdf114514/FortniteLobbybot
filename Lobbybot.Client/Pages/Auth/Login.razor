@@ -1,3 +1,31 @@
 @page "/auth/login"
 
-<h1>LOGIN PLEASE</h1>
+<PageTitle>Login</PageTitle>
+
+<style>
+    article {
+        justify-content: center;
+        align-items: center;
+        padding-bottom: 25%;
+    }
+</style>
+
+<h1>@L["Login"]</h1>
+<div style="text-align: center;">
+    <label for="InputPassword" class="form-label">@L["Password"]</label>
+    <input @bind-value=InputPassword type="password" id="InputPassword" class="form-control" placeholder="@L["Password"]">
+    <button type="submit" class="Button" style="margin-top: 20px;" @onclick=OnLoginButtonClick>@L["Login"]</button>
+</div>
+
+@code {
+    string InputPassword = string.Empty;
+
+    async void OnLoginButtonClick() {
+        if (!(await Auth.Login(InputPassword))) {
+            JS.Alert(L["AuthenticationFailed"]);
+            return;
+        }
+        Auth.NotifyAuthenticationStateChanged();
+        Navigation.NavigateTo("/");
+    }
+}
