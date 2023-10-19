@@ -1,0 +1,17 @@
+@page "/configuration"
+@attribute [Authorize]
+
+<h2>@L["Configuration"]</h2>
+@if (Config is null) {
+    <p>@L["Loading"]</p>
+} else {
+    <p>TODO: add bootstrap Scrollspy</p>
+}
+
+@code {
+    LobbybotConfig? Config;
+
+    protected override async Task OnInitializedAsync() {
+        Config = await Api.GetConfig();
+    }
+}
