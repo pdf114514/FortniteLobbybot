@@ -499,7 +499,7 @@
 
     <Modal Title=@L["Logout"] Visible=LogoutVisible OnClose=@(() => LogoutVisible = false)>
         <p>@L["LogoutConfirm"]</p>
-        <button class="btn" @onclick=@(async () => { await Auth.Logout(); LogoutVisible = false; })>@L["Logout"]</button>
+        <button class="Button" @onclick=@(async () => { await Auth.Logout(); LogoutVisible = false; })>@L["Logout"]</button>
     </Modal>
 
     <Modal Title=@L["Settings"] Visible=SettingsVisible OnClose=@(() => SettingsVisible = false)>
@@ -532,13 +532,17 @@
         Console.WriteLine($"Version: {GetVersion(false)}");
         if (await Auth.IsAuthenticated()) {
             var config = await Api.GetConfig();
+            if (config is null) {
+                PasswordEnabled = true;
+                return;
+            }
             PasswordEnabled = config.Web.PasswordEnabled;
         } else PasswordEnabled = true;
         await base.OnInitializedAsync();
     }
 
     string GetVersion(bool shortVersion = true) {
-        var informationalVersion = Assembly.GetExecutingAssembly().GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>().InformationalVersion;
+        var informationalVersion = Assembly.GetExecutingAssembly()?.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "UNKNOWN";
         if (!shortVersion) return informationalVersion;
         var splitted = informationalVersion.Split('+');
         return $"{splitted[0]}+{splitted[1][..7]}";

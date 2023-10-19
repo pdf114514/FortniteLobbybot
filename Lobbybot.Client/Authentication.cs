@@ -12,6 +12,11 @@ public class LobbybotAuthenticationStateProvider : AuthenticationStateProvider {
     private bool? _IsAuthenticated;
     public async Task<bool> IsAuthenticated() => _IsAuthenticated ??= (await Http.GetAsync("api/auth/status")).IsSuccessStatusCode;
 
+    public Task<AuthenticationState> GetAuthenticationStateAsync(bool force) {
+        if (force) _IsAuthenticated = null;
+        return GetAuthenticationStateAsync();
+    }
+
     public override async Task<AuthenticationState> GetAuthenticationStateAsync() {
         var authenticated = await IsAuthenticated();
         if (authenticated) {
@@ -23,13 +28,13 @@ public class LobbybotAuthenticationStateProvider : AuthenticationStateProvider {
 
     public async Task<bool> Login(string password) {
         var response = await Http.PostAsJsonAsync("api/auth/login", new Dictionary<string, string> { ["password"] = password });
-        if (response.IsSuccessStatusCode) NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        if (response.IsSuccessStatusCode) NotifyAuthenticationStateChanged(GetAuthenticationStateAsync(true));
         return response.IsSuccessStatusCode;
     }
 
     public async Task Logout() {
         await Http.PostAsync("api/auth/logout", null);
-        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync(true));
     }
 
     public void NotifyAuthenticationStateChanged() => NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());

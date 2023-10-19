@@ -33,6 +33,7 @@ public partial class FortniteClient : IDisposable {
         Session = await Auth.Login();
         User = await GetAccountByAccountId<FortniteClientUser, FortniteClientUserData>(Session.AccountId) ?? throw new Exception("Failed to get client user data!");
         await UpdateFriends();
+        
         XMPP = new(this);
         await XMPP.Connect();
         await XMPP.WaitForReady();
