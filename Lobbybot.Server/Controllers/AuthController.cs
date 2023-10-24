@@ -17,7 +17,7 @@ public class AuthController : ControllerBase {
 
     [HttpPost("logout")]
     public IActionResult Logout() {
-        if (!Request.Cookies.TryGetValue("sessionId", out var sessionId)) return Unauthorized();
+        if (!Request.Cookies.ContainsKey("sessionId")) return Unauthorized();
         Response.Cookies.Delete("sessionId");
         return Ok();
     }
