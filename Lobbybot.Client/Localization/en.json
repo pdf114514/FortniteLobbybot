@@ -10,5 +10,6 @@
     "Boot": "Boot",
     "Bots": "Bots",
     "Password": "Password",
-    "LogoutConfirm": "Are you sure you want to logout?"
+    "LogoutConfirm": "Are you sure you want to logout?",
+    "AuthenticationFailed": "Failed to authenticate"
 }
