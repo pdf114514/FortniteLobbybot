@@ -17,11 +17,20 @@
 
 <body>
     <div id="app">
-        <svg class="loading-progress">
-            <circle r="40%" cx="50%" cy="50%" />
-            <circle r="40%" cx="50%" cy="50%" />
-        </svg>
-        <div class="loading-progress-text"></div>
+        <style>
+            body {
+                font-family: sans-serif;
+                color: white;
+                background-color: black;
+            }
+        </style>
+        <div style="position: absolute; top: 50%; left: 50%; width: 100%; text-align: center; transform: translateX(-50%) translateY(-50%); -webkit-transform: translateY(-40%) translateX(-50%);">
+            <div class="progress">
+                <div class="progress-bar" style="width: var(--blazor-load-percentage, 0%);"></div>
+            </div>
+            <h2 class="blankslate-heading loading-progress-text"></h2>
+            <p>Loading...</p>
+        </div>
     </div>
 
     <div id="blazor-error-ui">
