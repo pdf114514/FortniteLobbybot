@@ -10,5 +10,6 @@
     "Boot": "ブート",
     "Bots": "ボット",
     "Password": "パスワード",
-    "LogoutConfirm": "本当にログアウトしますか?"
+    "LogoutConfirm": "本当にログアウトしますか?",
+    "AuthenticationFailed": "認証に失敗しました"
 }

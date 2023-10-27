@@ -9,7 +9,7 @@ public static class Global {
 
     static Global() {
         LoadConfig();
-        Console.WriteLine($"VER: {System.Diagnostics.FileVersionInfo.GetVersionInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).ProductVersion}");
+        Console.WriteLine($"Version: {System.Diagnostics.FileVersionInfo.GetVersionInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).ProductVersion}");
     }
     
     public static void LoadConfig() {

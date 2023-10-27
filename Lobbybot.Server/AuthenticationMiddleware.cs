@@ -21,17 +21,10 @@ public class LobbybotAuthenticationMiddleware {
 
     public async Task InvokeAsync(HttpContext context) {
         if (Config.Web.PasswordEnabled && context.Request.Path.StartsWithSegments("/api") && !context.Request.Path.StartsWithSegments("/api/auth")) {
-            if (!context.Request.Cookies.ContainsKey("sessionId") || !AuthenticatedSessionIds.Contains(context.Request.Cookies["sessionId"]!)) {
-                if (context.Request.Cookies.ContainsKey("password") && context.Request.Cookies["password"] == Config.Web.Password) {
-                    var sessionId = Guid.NewGuid().ToString("N");
-                    AuthenticatedSessionIds.Add(sessionId);
-                    context.Response.Cookies.Append("sessionId", sessionId, new() { Expires = DateTime.Now.AddDays(7) });
-                    context.Response.Cookies.Delete("password");
-                } else {
-                    context.Response.StatusCode = 401;
-                    await context.Response.WriteAsync("Unauthorized");
-                    return;
-                }
+            if (!(context.Request.Cookies.TryGetValue("sessionId", out var sessionId) && AuthenticatedSessionIds.Contains(sessionId))) {
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync("Unauthorized");
+                return;
             }
         }
         await Next(context);

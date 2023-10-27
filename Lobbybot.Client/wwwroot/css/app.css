@@ -1,7 +1,14 @@
 @import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
 
+@font-face {
+    font-family: 'Noto-Sans-JP';
+    src: url(/fonts/NotoSansJP-VariableFont_wght.ttf);
+}
+
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    /* font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; */
+    font-family: 'Noto-Sans-JP', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-variation-settings: "wght" 350;
 }
 
 h1:focus {
