@@ -11,5 +11,7 @@
     "Bots": "ボット",
     "Password": "パスワード",
     "LogoutConfirm": "本当にログアウトしますか?",
-    "AuthenticationFailed": "認証に失敗しました"
+    "AuthenticationFailed": "認証に失敗しました",
+    "Web": "ウェブ",
+    "EnablePassword": "パスワードを有効化"
 }

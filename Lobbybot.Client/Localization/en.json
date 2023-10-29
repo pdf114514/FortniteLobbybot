@@ -11,5 +11,7 @@
     "Bots": "Bots",
     "Password": "Password",
     "LogoutConfirm": "Are you sure you want to logout?",
-    "AuthenticationFailed": "Failed to authenticate"
+    "AuthenticationFailed": "Failed to authenticate",
+    "Web": "Web",
+    "EnablePassword": "Enable password"
 }
