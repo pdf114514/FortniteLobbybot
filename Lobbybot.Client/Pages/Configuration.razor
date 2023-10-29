@@ -1,11 +1,35 @@
 @page "/configuration"
 @attribute [Authorize]
 
+<style>
+    .Config > div > div {
+        border-bottom: 2px solid #555;
+        padding: 4px 0;
+    }
+
+    .Config > div > div > span {
+        display: inline-block;
+        width: 200px;
+    }
+</style>
+
 <h2>@L["Configuration"]</h2>
 @if (Config is null) {
     <p>@L["Loading"]</p>
 } else {
-    <p>TODO</p>
+    <div class="Config">
+        <h4>@L["Web"]</h4>
+        <div>
+            <div>
+                <span>@L["EnablePassword"]</span>
+                <input type="checkbox" checked="@Config.Web.PasswordEnabled" /> <!-- Is this correct? -->
+            </div>
+            <div>
+                <span>@L["Password"]</span>
+                <input type="password" @bind-value="Config.Web.Password" />
+            </div>
+        </div>
+    </div>
 }
 
 @code {
