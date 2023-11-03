@@ -8,4 +8,10 @@ namespace Lobbybot.Server.Controllers;
 public class ConfigController : ControllerBase {
     [HttpGet]
     public LobbybotConfig Get() => Config;
+
+    [HttpPut]
+    public IActionResult Put(LobbybotConfig config) {
+        SaveConfig(config);
+        return NoContent();
+    }
 }
