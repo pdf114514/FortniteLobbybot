@@ -5,7 +5,8 @@ using System.Text.Json;
 namespace Lobbybot.Server;
 
 public static class Global {
-    public static LobbybotConfig Config { get; set; } = null!;
+    private static readonly string ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Lobbybot", "config.json");
+    public static LobbybotConfig Config { get; private set; } = null!;
 
     static Global() {
         LoadConfig();
@@ -13,13 +14,19 @@ public static class Global {
     }
     
     public static void LoadConfig() {
-        var filepath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Lobbybot", "config.json");
-        if (!File.Exists(filepath)) {
-            Directory.CreateDirectory(Path.GetDirectoryName(filepath)!);
-            File.WriteAllText(filepath, JsonSerializer.Serialize(new LobbybotConfig(), new JsonSerializerOptions() { WriteIndented = true }));
+        if (!File.Exists(ConfigPath)) {
+            Directory.CreateDirectory(Path.GetDirectoryName(ConfigPath)!);
+            File.WriteAllText(ConfigPath, JsonSerializer.Serialize(new LobbybotConfig(), new JsonSerializerOptions() { WriteIndented = true }));
         }
-        Console.WriteLine($"Loading config from {filepath}");
-        using var file = File.Open(filepath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        Console.WriteLine($"Loading config from {ConfigPath}");
+        using var file = File.Open(ConfigPath, FileMode.Open, FileAccess.Read, FileShare.Read);
         Config = JsonSerializer.Deserialize<LobbybotConfig>(file) ?? new();
+    }
+
+    public static void SaveConfig(LobbybotConfig config) {
+        Config = config;
+        Console.WriteLine($"Saving config to {ConfigPath}");
+        using var file = File.Open(ConfigPath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
+        JsonSerializer.Serialize(file, Config, new JsonSerializerOptions() { WriteIndented = true });
     }
 }

@@ -13,4 +13,5 @@ public class LobbybotApi {
     }
 
     public Task<LobbybotConfig?> GetConfig() => Http.GetFromJsonAsync<LobbybotConfig>("api/config");
+    public Task SaveConfig(LobbybotConfig config) => Http.PutAsJsonAsync("api/config", config);
 }

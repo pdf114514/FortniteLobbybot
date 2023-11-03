@@ -11,12 +11,21 @@
         display: inline-block;
         width: 200px;
     }
+
+    .SaveConfigButton {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        margin-bottom: 20px;
+        margin-right: 20px;
+    }
 </style>
 
 <h2>@L["Configuration"]</h2>
 @if (Config is null) {
     <p>@L["Loading"]</p>
 } else {
+    <button class="Button SaveConfigButton" @onclick="SaveConfig">@L["Save"]</button>
     <div class="Config">
         <h4>@L["Web"]</h4>
         <div>
@@ -37,5 +46,10 @@
 
     protected override async Task OnInitializedAsync() {
         Config = await Api.GetConfig();
+    }
+
+    async void SaveConfig() {
+        if (Config is null) JS.Alert("Config is null!");
+        else JS.Alert(JsonSerializer.Serialize(Config));// await Api.SaveConfig(Config);
     }
 }
