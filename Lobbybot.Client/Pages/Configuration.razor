@@ -7,7 +7,7 @@
         padding: 4px 0;
     }
 
-    .Config > div > div > span {
+    .Config > div > div > span:first-child {
         display: inline-block;
         width: 200px;
     }
@@ -27,15 +27,51 @@
 } else {
     <button class="Button SaveConfigButton" @onclick="SaveConfig">@L["Save"]</button>
     <div class="Config">
+        <h4>@L["Bots"]</h4>
+        <button class="Button">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus" width="1.2em" height="1.2em" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                <path d="M12 5l0 14"></path>
+                <path d="M5 12l14 0"></path>
+            </svg>
+            <span>Add new bot</span>
+        </button>
+        @foreach (var bot in Config.Bots.Values) {
+            <h5>@L["Bot"] @(Config.Bots.Values.ToList().IndexOf(bot) + 1)</h5>
+            <div>
+                <div>
+                    <span>@L["AutoStart"]</span>
+                    <InputCheckbox @bind-Value="bot.AutoStart" />
+                </div>
+            </div>
+        }
         <h4>@L["Web"]</h4>
         <div>
             <div>
                 <span>@L["EnablePassword"]</span>
-                <input type="checkbox" checked="@Config.Web.PasswordEnabled" /> <!-- Is this correct? -->
+                <InputCheckbox @bind-Value="Config.Web.PasswordEnabled" /> <!-- Is this correct? -->
             </div>
             <div>
                 <span>@L["Password"]</span>
-                <input type="password" @bind-value="Config.Web.Password" />
+                <InputText type="@InputWebPassword" disabled=@(!Config.Web.PasswordEnabled) @bind-Value="Config.Web.Password" />
+                <span style="cursor: pointer;" @onclick="() => WebPasswordVisible = Config.Web.PasswordEnabled && !WebPasswordVisible">
+                    @if (WebPasswordVisible) {
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                            <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"></path>
+                            <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6"></path>
+                        </svg>
+                    } else {
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                            <path d="M21 9c-2.4 2.667 -5.4 4 -9 4c-3.6 0 -6.6 -1.333 -9 -4"></path>
+                            <path d="M3 15l2.5 -3.8"></path>
+                            <path d="M21 14.976l-2.492 -3.776"></path>
+                            <path d="M9 17l.5 -4"></path>
+                            <path d="M15 17l-.5 -4"></path>
+                        </svg>
+                    }
+                </span>
             </div>
         </div>
     </div>
@@ -43,6 +79,8 @@
 
 @code {
     LobbybotConfig? Config;
+    bool WebPasswordVisible = false;
+    string InputWebPassword => WebPasswordVisible ? "text" : "password";
 
     protected override async Task OnInitializedAsync() {
         Config = await Api.GetConfig();
@@ -50,6 +88,6 @@
 
     async void SaveConfig() {
         if (Config is null) JS.Alert("Config is null!");
-        else JS.Alert(JsonSerializer.Serialize(Config));// await Api.SaveConfig(Config);
+        else await Api.SaveConfig(Config);
     }
 }
