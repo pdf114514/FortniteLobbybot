@@ -36,6 +36,7 @@
             </svg>
             <span>Add new bot</span>
         </button>
+        <!-- todo add Offcanvas -->
         @foreach (var bot in Config.Bots.Values) {
             <h5>@L["Bot"] @(Config.Bots.Values.ToList().IndexOf(bot) + 1)</h5>
             <div>
@@ -87,7 +88,12 @@
     }
 
     async void SaveConfig() {
+        var old = await Api.GetConfig();
         if (Config is null) JS.Alert("Config is null!");
         else await Api.SaveConfig(Config);
+        if (!old!.Web.PasswordEnabled && Config!.Web.PasswordEnabled) {
+            JS.Alert("You enabled the password. Please login.");
+            JS.InvokeVoid("location.reload");
+        }
     }
 }
