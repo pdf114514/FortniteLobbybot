@@ -19,6 +19,19 @@
         margin-bottom: 20px;
         margin-right: 20px;
     }
+
+    .NewBotGuide {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 100;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 </style>
 
 <h2>@L["Configuration"]</h2>
@@ -26,17 +39,19 @@
     <p>@L["Loading"]</p>
 } else {
     <button class="Button SaveConfigButton" @onclick="SaveConfig">@L["Save"]</button>
+    <div class="NewBotGuide" style="display: @(ShowingNewBotGuide ? "inherit" : "none")">
+        <code>(function () {let xhr = new XMLHttpRequest();xhr.open("GET","https://www.epicgames.com/id/api/redirect?clientId=3446cd72694c4a4485d81b77adbb2141&amp;responseType=code",!0);xhr.onload = () =&gt; {if (4 === xhr.readyState &amp;&amp; 200 === xhr.status) {var a = JSON.parse(xhr.responseText).redirectUrl.split("?code=")[1];location.href = "@(Host)authorize?code="+a;} else alert(`Error ${xhr.statusText}`);};xhr.onerror = () =&gt; {alert("XHR ERROR");};xhr.send();})();</code>
+    </div>
     <div class="Config">
         <h4>@L["Bots"]</h4>
-        <button class="Button">
+        <button class="Button" @onclick="() => ShowingNewBotGuide = true">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus" width="1.2em" height="1.2em" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                 <path d="M12 5l0 14"></path>
                 <path d="M5 12l14 0"></path>
             </svg>
-            <span>Add new bot</span>
+            <span>@L["AddNewBot"]</span>
         </button>
-        <!-- todo add Offcanvas -->
         @foreach (var bot in Config.Bots.Values) {
             <h5>@L["Bot"] @(Config.Bots.Values.ToList().IndexOf(bot) + 1)</h5>
             <div>
@@ -82,16 +97,22 @@
     LobbybotConfig? Config;
     bool WebPasswordVisible = false;
     string InputWebPassword => WebPasswordVisible ? "text" : "password";
+    bool ShowingNewBotGuide = false;
+    string Host = string.Empty;
 
     protected override async Task OnInitializedAsync() {
         Config = await Api.GetConfig();
+        Host = Navigation.BaseUri;
     }
 
     async void SaveConfig() {
         var old = await Api.GetConfig();
-        if (Config is null) JS.Alert("Config is null!");
+        if (Config is null || old is null) {
+            JS.Alert("Config is null!");
+            return;
+        }
         else await Api.SaveConfig(Config);
-        if (!old!.Web.PasswordEnabled && Config!.Web.PasswordEnabled) {
+        if (!old.Web.PasswordEnabled && Config.Web.PasswordEnabled) {
             JS.Alert("You enabled the password. Please login.");
             JS.InvokeVoid("location.reload");
         }
