@@ -32,7 +32,7 @@ public class FortniteXMPP : IDisposable {
             try {
                 presence = JsonSerializer.Deserialize<FortnitePresence>(e.Elements().First(x => x.Name.LocalName == "status").Value)!;
             } catch {
-                Logging.Warn($"XMPP presence failed to deserialize");
+                Logging.Warn("XMPP presence failed to deserialize");
                 return;
             }
             if (presence is null) { Logging.Warn("XMPP presence failed to deserialize!"); return; }
@@ -65,11 +65,11 @@ public class FortniteXMPP : IDisposable {
             }
             var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(e.Text);
             if (data is null) {
-                Logging.Warn($"Failed to deserialize XMPP message");
+                Logging.Warn("Failed to deserialize XMPP message");
                 return;
             }
             if (!data.ContainsKey("type")) {
-                Logging.Warn($"XMPP message missing `type`");
+                Logging.Warn("XMPP message missing `type`");
                 return;
             }
             var type = data["type"].ToString();

@@ -60,7 +60,10 @@ public class FortniteClientCredentialsAuthData : AuthData {
 
 public abstract class AuthBase<T1, T2> where T1 : AuthSession<T2> where T2 : AuthData {
     protected HttpClient Http = new();
-    public virtual AuthClient Client { get; internal set; } = AuthClients.FortnitePCGameClient;
+    public AuthClient Client { get; internal set; }
+
+    public AuthBase(AuthClient? client = null) => Client = client ?? AuthClients.FortniteAndroidGameClient;
+
     public abstract Task<T1> Login();
 
     protected async Task<T1> Authenticate(Dictionary<string, string> body) {
@@ -81,10 +84,11 @@ public abstract class AuthBase<T1, T2> where T1 : AuthSession<T2> where T2 : Aut
     }
 }
 
+// https://www.epicgames.com/id/api/redirect?clientId=3f69e56c7649492c8cc29f1af08a8a12&responseType=code
 public class AuthorizationCodeAuth : AuthBase<FortniteAuthSession, FortniteAuthData> {
     private string AuthorizationCode { get; }
 
-    public AuthorizationCodeAuth(string authorizationCode) {
+    public AuthorizationCodeAuth(string authorizationCode, AuthClient? client = null) : base(client) {
         if (authorizationCode.Contains("?code=")) AuthorizationCode = HttpUtility.ParseQueryString(authorizationCode[authorizationCode.IndexOf('?')..]).Get("code") ?? throw new Exception("Invalid authorization code");
         else if (authorizationCode.Length == 32) AuthorizationCode = authorizationCode;
         else throw new Exception("Invalid authorization code");
@@ -103,7 +107,7 @@ public class DeviceAuth : AuthBase<FortniteAuthSession, FortniteAuthData> {
     private string AccountId { get; }
     private string Secret { get; }
 
-    public DeviceAuth(string deviceId, string accountId, string secret) {
+    public DeviceAuth(string deviceId, string accountId, string secret, AuthClient? client = null) : base(client) {
         if (deviceId.Length != 32) throw new Exception("Invalid device ID");
         DeviceId = deviceId;
         if (accountId.Length != 32) throw new Exception("Invalid account ID");
@@ -112,11 +116,11 @@ public class DeviceAuth : AuthBase<FortniteAuthSession, FortniteAuthData> {
         Secret = secret;
     }
 
-    public DeviceAuth(DeviceAuthObject deviceAuth) : this(deviceAuth.DeviceId, deviceAuth.AccountId, deviceAuth.Secret) {}
+    public DeviceAuth(DeviceAuthObject deviceAuth, AuthClient? client = null) : this(deviceAuth.DeviceId, deviceAuth.AccountId, deviceAuth.Secret, client) {}
 
     public async override Task<FortniteAuthSession> Login() {
         var prevClient = Client;
-        Client = AuthClients.FortniteIOSGameClient;
+        Client = FortniteUtils.DeviceAuthClient;
         var session = await Authenticate(new() {
             { "grant_type", "device_auth" },
             { "device_id", DeviceId },
@@ -124,14 +128,14 @@ public class DeviceAuth : AuthBase<FortniteAuthSession, FortniteAuthData> {
             { "secret", Secret }
         });
         Client = prevClient;
-        return prevClient == AuthClients.FortniteIOSGameClient ? session : await session.SwitchClient(Client);
+        return prevClient == FortniteUtils.DeviceAuthClient ? session : await session.SwitchClient(Client);
     }
 }
 
 public class ExchangeCodeAuth : AuthBase<FortniteAuthSession, FortniteAuthData> {
     private string ExchangeCode { get; }
 
-    public ExchangeCodeAuth(string exchangeCode) {
+    public ExchangeCodeAuth(string exchangeCode, AuthClient? client = null) : base(client) {
         if (exchangeCode.Length != 32) throw new Exception("Invalid exchange code");
         ExchangeCode = exchangeCode;
     }
@@ -177,6 +181,7 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
     public string? DeviceId { get; private set; }
     public string RefreshToken { get; private set; }
     public DateTime RefreshExpiresAt { get; private set; }
+    public Dictionary<string, int>? Perms { get; internal set; }
 
     private HttpClient Http = new();
     public Timer? RefreshTimer { get; private set; }
@@ -205,6 +210,16 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
         request.Headers.Add("Authorization", $"bearer {AccessToken}");
         var response = await new HttpClient().SendAsync(request);
         return response.IsSuccessStatusCode;
+    }
+
+    public async Task<Dictionary<string, int>?> GetPermissions(bool force = false) {
+        if (!force && Perms is not null) return Perms;
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://account-public-service-prod.ol.epicgames.com/account/api/oauth/permissions");
+        request.Headers.Add("Authorization", $"bearer {AccessToken}");
+        var response = await Http.SendAsync(request);
+        if (!response.IsSuccessStatusCode) throw new Exception("Failed to get permissions");
+        var data = JsonSerializer.Deserialize<JsonDocument>(await response.Content.ReadAsStringAsync()) ?? throw new Exception("Failed to deserialize permissions data");
+        return data.RootElement.EnumerateArray().ToDictionary(x => x.GetProperty("resource").GetString() ?? "", x => x.GetProperty("action").GetInt32());
     }
 
     public async void Refresh() {
@@ -245,9 +260,14 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
         return data;
     }
 
-    public async Task<DeviceAuthObject> CreateDeviceAuth() {
+    public async Task<DeviceAuthObject> CreateDeviceAuth(bool force = false) {
+        if (!force && ((await GetPermissions())!.GetValueOrDefault("account:public:account:deviceAuths", 0) & (int)EPermissions.Create) == 0) throw new Exception("Missing permissions to create device auth");
         FortniteAuthSession session = this;
-        if (ClientId != AuthClients.FortniteIOSGameClient.ClientId) session = await SwitchClient(AuthClients.FortniteIOSGameClient); 
+        var switched = false;
+        if (ClientId != FortniteUtils.DeviceAuthClient.ClientId) {
+            session = await SwitchClient(FortniteUtils.DeviceAuthClient);
+            switched = true;
+        }
         var request = new HttpRequestMessage(HttpMethod.Post, $"https://account-public-service-prod.ol.epicgames.com/account/api/public/account/{AccountId}/deviceAuth");
         request.Headers.Add("Authorization", $"bearer {session.AccessToken}");
         var response = await Http.SendAsync(request);
@@ -255,6 +275,7 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
             Logging.Error($"Failed to create device auth:\n{JsonSerializer.Serialize(await response.Content.ReadAsStringAsync(), new JsonSerializerOptions { WriteIndented = true })}");
             throw new Exception("Failed to create device auth");
         }
+        if (switched) session.Dispose();
         var data = JsonSerializer.Deserialize<DeviceAuthObject>(await response.Content.ReadAsStringAsync()) ?? throw new Exception("Failed to deserialize device auth data");
         return data;
     }
