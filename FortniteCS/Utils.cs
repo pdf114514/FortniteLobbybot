@@ -7,6 +7,7 @@ namespace FortniteCS;
 
 public static class FortniteUtils {
     public const string DateTimeFormat = "yyyy-MM-ddTHH:mm:ss.fffZ";
+    public static readonly AuthClient DeviceAuthClient = AuthClients.FortniteAndroidGameClient;
 
     public static DateTime ConvertToDateTime(string str) => DateTime.ParseExact(str, DateTimeFormat, null);
     public static string ConvertToString(DateTime dt) => dt.ToString(DateTimeFormat);
