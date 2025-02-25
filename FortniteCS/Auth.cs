@@ -154,16 +154,18 @@ public class ExchangeCodeAuth : AuthBase<FortniteAuthSession, FortniteAuthData> 
 
 public class AuthSession<T> where T : AuthData {
     public string AccessToken { get; protected set; }
+    public string TokenType { get; protected set; }
     public DateTime ExpiresAt { get; protected set; }
+    public int ExpiresIn { get; protected set; }
     public string AccountId { get; protected set; }
     public string ClientId { get; protected set; }
     public string ClientSecret { get; init; }
 
-    public SemaphoreSlim RefreshLock { get; } = new(1, 1);
-
     public AuthSession(T data, string clientSecret) {
         AccessToken = data.AccessToken;
+        TokenType = data.TokenType;
         ExpiresAt = FortniteUtils.ConvertToDateTime(data.ExpiresAt);
+        ExpiresIn = data.ExpiresIn;
         AccountId = data.AccountId;
         ClientId = data.ClientId;
         ClientSecret = clientSecret;
@@ -184,6 +186,7 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
     public Dictionary<string, int>? Perms { get; internal set; }
 
     private HttpClient Http = new();
+    public SemaphoreSlim RefreshLock { get; } = new(1, 1);
     public Timer? RefreshTimer { get; private set; }
 
     public FortniteAuthSession(FortniteAuthData data, string clientSecret) : base(data, clientSecret) {
@@ -200,7 +203,8 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
     }
 
     private void SetRefreshTimer() {
-        RefreshTimer = new(new((state) => Refresh()), null, ExpiresAt - DateTime.UtcNow - TimeSpan.FromMinutes(15), Timeout.InfiniteTimeSpan);
+        // Should ExpiresAt be used instead of ExpiresIn?
+        RefreshTimer = new(new(async (state) => await Refresh()), null, TimeSpan.FromSeconds(ExpiresIn), Timeout.InfiniteTimeSpan);
     }
 
     public async Task<bool> Verify(bool forceVerify = false) {
@@ -222,7 +226,7 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
         return data.RootElement.EnumerateArray().ToDictionary(x => x.GetProperty("resource").GetString() ?? "", x => x.GetProperty("action").GetInt32());
     }
 
-    public async void Refresh() {
+    public async Task Refresh() {
         await RefreshLock.WaitAsync();
         Logging.Debug($"{AccountId} / {DisplayName} refreshing authentication...");
         try {
@@ -286,11 +290,13 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
     }
 
     public void Dispose() {
-        RefreshTimer?.Dispose();
         var request = new HttpRequestMessage(HttpMethod.Delete, $"https://account-public-service-prod.ol.epicgames.com/account/api/oauth/sessions/kill/{AccessToken}");
         request.Headers.Add("Authorization", $"bearer {AccessToken}");
         Http.SendAsync(request).Wait();
         Http.Dispose();
+        RefreshTimer?.Dispose();
+        RefreshLock.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
 

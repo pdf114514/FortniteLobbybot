@@ -97,7 +97,7 @@ public partial class FortniteClient {
             return null;
         }
         var json = await response.Content.ReadAsStringAsync();
-        Logging.Info(json);
+        Logging.Debug($"GetClientParty: {json}");
         return JsonSerializer.Deserialize<Dictionary<string, List<JsonElement>>>(json)?.GetValueOrDefault("current") is var current && current?.Count > 0 ? new(this, current.FirstOrDefault().Deserialize<FortnitePartyData>() ?? throw new Exception("Failed to deserialize json!")) : null;
     }
 
@@ -166,12 +166,13 @@ public partial class FortniteClient {
                 throw new Exception($"Failed to create party! {response.StatusCode}");
             }
             var json = await response.Content.ReadAsStringAsync();
-            Logging.Debug(json);
+                Logging.Debug($"CreateParty: {json}");
             party = new(this, JsonSerializer.Deserialize<FortnitePartyData>(json) ?? throw new Exception("Failed to deserialize json!"));
         } finally {
             PartyLock.Release();
         }
 
+        Logging.Debug($"CreateParty: {party.PartyId}");
         Party = new(this, party);
     }
 

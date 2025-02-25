@@ -178,7 +178,7 @@ public class FortniteXMPP : IDisposable {
                         await Client.InitializeParty(false, false);
                         var clientPartyMember = new FortniteClientPartyMember(Client.Party, payload);
                         member = clientPartyMember;
-                        JoinMUC(payload.PartyId);
+                        // JoinMUC(payload.PartyId);
                         SendPresence(new());
                         // todo implement meta things
                         clientPartyMember.Meta.Platform = Client.Config.Platform;
@@ -253,7 +253,7 @@ public class FortniteXMPP : IDisposable {
 
                     if (payload.AccountId == Client.User.AccountId) {
                         Logging.Debug($"Left party {payload.PartyId}");
-                        LeaveMUC(payload.PartyId);
+                        // LeaveMUC(payload.PartyId);
                     }
 
                     if (Client.Party.PartyId != payload.PartyId) {
@@ -298,7 +298,7 @@ public class FortniteXMPP : IDisposable {
 
                     if (member.AccountId == Client.User.AccountId) {
                         Logging.Debug($"Kicked from party {payload.PartyId}");
-                        LeaveMUC(payload.PartyId);
+                        // LeaveMUC(payload.PartyId);
                         await Client.InitializeParty(true, false);
                     }
 
@@ -366,6 +366,14 @@ public class FortniteXMPP : IDisposable {
         Connection.Element += (XmppConnection sender, ElementArgs e) => {
             // Logging.Debug($"XMPP element {(e.IsInput ? "received" : "sent")}:\n{e.Stanza}");
         };
+
+        Connection.ConnectionClosed += (XmppConnection sender) => {
+            Logging.Warn($"XMPP connection closed!");
+        };
+
+        Connection.ConnectionFailed += (XmppConnection sender, ConnFailedArgs e) => {
+            Logging.Error($"XMPP connection failed: {e.Message}");
+        };
     }
 
     public Task Connect() => Connection.ConnectAsync();
@@ -376,7 +384,7 @@ public class FortniteXMPP : IDisposable {
         return tcs.Task;
     }
 
-    public void JoinMUC(FortniteParty party) => JoinMUC(party.PartyId);
+    /*public void JoinMUC(FortniteParty party) => JoinMUC(party.PartyId);
     public void JoinMUC(string partyId) { // TODO support password
         Logging.Debug($"Joining MUC {partyId}");
         var presence = new XMPPPresence(Connection.Capabilities) { To = new($"Party-{partyId}@muc.prod.ol.epicgames.com/{Client.User.DisplayName}:{Client.User.AccountId}:{Connection.Jid.Resource}") };
@@ -394,7 +402,7 @@ public class FortniteXMPP : IDisposable {
         presence.SetAttributeValue("type", "unavailable");
         presence.Add(new XElement(XNamespace.Get("http://jabber.org/protocol/muc") + "x"));
         Connection.Send(presence);
-    }
+    }*/
 
     public void SendPresence(FortnitePresence fortnitePresence, string? show = null, string? type = null) {
         var presence = new XMPPPresence();
