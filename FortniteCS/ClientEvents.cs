@@ -48,7 +48,7 @@ public class FortniteClientEventAttribute : Attribute {
 public partial class FortniteClient {
     public event Action? Ready;
 
-    public event Action<FortniteFriend>? FriendMessage;
+    public event Action<FortniteFriendMessage>? FriendMessage;
     public event Action<FortnitePresence>? FriendPresence;
     public event Action<FortniteFriend>? FriendOnline;
     public event Action<FortniteFriend>? FriendOffline;
@@ -128,7 +128,10 @@ public partial class FortniteClient {
         Logging.Debug("Client is ready");
     }
 
-    // FriendMessage
+    internal void OnFriendMessage(FortniteFriendMessage message) {
+        Logging.Debug($"Friend message from {message.Friend.DisplayName}");
+        FriendMessage?.Invoke(message);
+    }
 
     internal void OnFriendPresence(FortnitePresence presence) {
         // Logging.Debug($"Friend presence {presence.DisplayName}");

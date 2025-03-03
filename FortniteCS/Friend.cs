@@ -39,24 +39,28 @@ public class PendingFriendData {
 }
 
 public class FortniteFriend {
+    public FortniteClient Client { get; init; }
     public string AccountId { get; init; }
-    public string? DisplayName { get; internal set; }
+    public string DisplayName { get; internal set; } = null!;
     public List<object> Groups { get; init; }
-    public int? Mutual { get; init; }
+    public int Mutual { get; init; }
     public string Alias { get; init; }
     public string Note { get; init; }
     public bool Favorite { get; init; }
     public DateTime CreatedAt { get; init; }
 
-    public FortniteFriend(FortniteFriendData data) {
+    public FortniteFriend(FortniteClient client, FortniteFriendData data) {
+        Client = client;
         AccountId = data.AccountId;
         Groups = data.Groups;
-        Mutual = data.Mutual;
+        Mutual = data.Mutual ?? 0;
         Alias = data.Alias;
         Note = data.Note;
         Favorite = data.Favorite;
         CreatedAt = FortniteUtils.ConvertToDateTime(data.Created);
     }
+
+    public Task SendMessage(string message) => Client.SendMessageToFriend(this, message);
 }
 
 public abstract class PendingFriend {

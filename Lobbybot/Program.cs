@@ -5,7 +5,7 @@ using FortniteAuthBase = FortniteCS.AuthBase<FortniteCS.FortniteAuthSession, For
 namespace Lobbybot;
 
 public class Program {
-    static void Main(string[] args) {
+    async static Task Main(string[] args) {
         FortniteAuthBase auth;
         if (File.Exists("deviceAuth.json")) {
             auth = new DeviceAuth(JsonSerializer.Deserialize<DeviceAuthObject>(File.ReadAllText("deviceAuth.json"))!);
@@ -13,7 +13,7 @@ public class Program {
             Console.WriteLine("Enter your authorization code:");
             auth = new AuthorizationCodeAuth(Console.ReadLine()!);
         }
-        using var client = new FortniteClient(auth);
+        await using var client = new FortniteClient(auth);
         client.Ready += async () => {
             Console.WriteLine($"Ready! {client.User.AccountId} / {client.User.DisplayName}");
             if (!File.Exists("deviceAuth.json")) {
@@ -22,17 +22,24 @@ public class Program {
             // Console.WriteLine(FortniteUtils.JsonSerialize(client.Party?.Members[client.User.AccountId].Meta));
         };
         // client.FriendRequestReceived += async friend => await client.AccpetFriendRequest(friend);
+        client.FriendMessage += async m => {
+            Console.WriteLine($"Message from {m.Friend.DisplayName}: {m.Message}");
+            if (m.Message == "hi") {
+                Console.WriteLine("Sending message back");
+                await m.Friend.SendMessage($"Hello, {m.Friend.DisplayName}!");
+            }
+        };
         client.FriendPresence += presence => Console.WriteLine($"Presence: {presence.DisplayName} / {presence.Status}");
         client.PartyInvite += async invite => await client.AcceptInvite(invite);
         client.PartyJoinRequest += async request => await client.AcceptJoinRequest(request);
         client.PartyJoinConfirmation += confirmation => Console.WriteLine($"Someone is going to join the party: {confirmation.DisplayName}");
         client.PartyMemberJoined += member => {
             Console.WriteLine($"{member.DisplayName} joined the party!");
-            client.XMPP.SendMessage(client.Party!.PartyId, $"Hello {(member.AccountId == client.User.AccountId ? "I'm here" : member.DisplayName)}!");
+            client.Party?.SendMessage($"Hello {(member.AccountId == client.User.AccountId ? "I'm here" : member.DisplayName)}!");
         };
         client.PartyMemberLeft += member => Console.WriteLine($"{member.DisplayName} left the party!");
         client.PartyMemberEmoteUpdated += async member => await client.Party!.Me.SendPatch(new() { ["Default:FrontendEmote_j"] = member.Meta["Default:FrontendEmote_j"] }); // copys emote :D
-        client.Start().Wait();
+        await client.Start();
         Console.WriteLine("Press enter to exit");
         Console.ReadLine();
     }
@@ -61,7 +68,7 @@ public class MyFortniteClient(FortniteAuthBase auth) : FortniteClient(auth) {
     [FortniteClientEvent(FortniteClientEvent.PartyMemberJoined)]
     public void OnPartyMemberJoined(FortnitePartyMember member) {
         Console.WriteLine($"{member.DisplayName} joined the party!");
-        XMPP.SendMessage(Party!.PartyId, $"Hello {(member.AccountId == User.AccountId ? "I'm here" : member.DisplayName)}!");
+        Party?.SendMessage($"Hello {(member.AccountId == User.AccountId ? "I'm here" : member.DisplayName)}!");
     }
 
     [FortniteClientEvent(FortniteClientEvent.PartyMemberLeft)]
