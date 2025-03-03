@@ -28,7 +28,6 @@ public class ExchangeCodeObject {
 
 public class AuthData {
     [K("access_token")] public required string AccessToken { get; set; }
-    [K("account_id")] public required string AccountId { get; set; }
     [K("client_id")] public required string ClientId { get; set; }
     [K("expires_at")] public required string ExpiresAt { get; set; }
     [K("expires_in")] public required int ExpiresIn { get; set; }
@@ -36,6 +35,7 @@ public class AuthData {
 }
 
 public class FortniteAuthData : AuthData {
+    [K("account_id")] public required string AccountId { get; set; }
     [K("refresh_expires")] public required int RefreshExpires { get; set; }
     [K("refresh_expires_at")] public required string RefreshExpiresAt { get; set; }
     [K("refresh_token")] public required string RefreshToken { get; set; }
@@ -52,6 +52,15 @@ public class FortniteClientCredentialsAuthData : AuthData {
     [K("client_service")] public required string ClientService { get; set; }
     [K("product_id")] public required string ProductId { get; set; }
     [K("application_id")] public required string ApplicationId { get; set; }
+}
+
+public class EOSAuthData : AuthData {
+    [K("application_id")] public required string ApplicationId { get; set; }
+    [K("refresh_token")] public required string RefreshToken { get; set; }
+    [K("scope")] public required string Scope { get; set; }
+    [K("merged_accounts")] public List<object>? MergedAccounts { get; set; }
+    [K("acr")] public string? Acr { get; set; }
+    [K("auth_time")] public string? AuthTime { get; set; }
 }
 
 #endregion
@@ -157,7 +166,6 @@ public class AuthSession<T> where T : AuthData {
     public string TokenType { get; protected set; }
     public DateTime ExpiresAt { get; protected set; }
     public int ExpiresIn { get; protected set; }
-    public string AccountId { get; protected set; }
     public string ClientId { get; protected set; }
     public string ClientSecret { get; init; }
 
@@ -166,7 +174,6 @@ public class AuthSession<T> where T : AuthData {
         TokenType = data.TokenType;
         ExpiresAt = FortniteUtils.ConvertToDateTime(data.ExpiresAt);
         ExpiresIn = data.ExpiresIn;
-        AccountId = data.AccountId;
         ClientId = data.ClientId;
         ClientSecret = clientSecret;
     }
@@ -174,7 +181,8 @@ public class AuthSession<T> where T : AuthData {
     public bool IsExpired => DateTime.UtcNow > ExpiresAt;
 }
 
-public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
+public class FortniteAuthSession : AuthSession<FortniteAuthData>, IAsyncDisposable {
+    public string AccountId { get; private set; }
     public string App { get; private set; }
     public string ClientService { get; private set; }
     public string DisplayName { get; private set; }
@@ -190,6 +198,7 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
     public Timer? RefreshTimer { get; private set; }
 
     public FortniteAuthSession(FortniteAuthData data, string clientSecret) : base(data, clientSecret) {
+        AccountId = data.AccountId;
         App = data.App;
         ClientService = data.ClientService;
         DisplayName = data.DisplayName;
@@ -229,6 +238,7 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
     public async Task Refresh() {
         await RefreshLock.WaitAsync();
         Logging.Debug($"{AccountId} / {DisplayName} refreshing authentication...");
+        string raw = string.Empty;
         try {
             RefreshTimer?.Dispose();
             var request = new HttpRequestMessage(HttpMethod.Post, "https://account-public-service-prod.ol.epicgames.com/account/api/oauth/token");
@@ -240,13 +250,16 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
             });
             var response = await Http.SendAsync(request);
             if (!response.IsSuccessStatusCode) throw new Exception("Failed to refresh authentication");
-            var data = JsonSerializer.Deserialize<FortniteAuthData>(await response.Content.ReadAsStringAsync()) ?? throw new Exception("Failed to deserialize authentication data");
+            raw = await response.Content.ReadAsStringAsync();
+            var data = JsonSerializer.Deserialize<FortniteAuthData>(raw) ?? throw new Exception("Failed to deserialize authentication data");
             AccessToken = data.AccessToken;
             ExpiresAt = FortniteUtils.ConvertToDateTime(data.ExpiresAt);
             RefreshToken = data.RefreshToken;
             RefreshExpiresAt = FortniteUtils.ConvertToDateTime(data.RefreshExpiresAt);
             SetRefreshTimer();
             Logging.Debug($"{AccountId} / {DisplayName} refreshed authentication");
+        } catch {
+            Logging.Error($"{AccountId} / {DisplayName} failed to refresh authentication: {raw}");
         } finally {
             RefreshLock.Release();
         }
@@ -279,7 +292,7 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
             Logging.Error($"Failed to create device auth:\n{JsonSerializer.Serialize(await response.Content.ReadAsStringAsync(), new JsonSerializerOptions { WriteIndented = true })}");
             throw new Exception("Failed to create device auth");
         }
-        if (switched) session.Dispose();
+        if (switched) await session.DisposeAsync();
         var data = JsonSerializer.Deserialize<DeviceAuthObject>(await response.Content.ReadAsStringAsync()) ?? throw new Exception("Failed to deserialize device auth data");
         return data;
     }
@@ -289,10 +302,84 @@ public class FortniteAuthSession : AuthSession<FortniteAuthData>, IDisposable {
         return await new ExchangeCodeAuth(exchangeCode.Code) { Client = authClient }.Login();
     }
 
-    public void Dispose() {
+    public async Task<EOSAuthSession> LoginEOS() {
+        // This is also ok ?
+        // grant_type=external_auth&external_auth_type=epicgames_access_token&external_auth_token=TOKEN&deployment_id=62a9473a2dca46b29ccf17577fcf42d7&nonce=RANDOM_STRING
+        var request = new HttpRequestMessage(HttpMethod.Post, "https://api.epicgames.dev/epic/oauth/v2/token");
+        request.Headers.Add("Authorization", $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"{ClientId}:{ClientSecret}"))}");
+        request.Content = new FormUrlEncodedContent(new Dictionary<string, string>() {
+            { "grant_type", "refresh_token" },
+            { "refresh_token", RefreshToken },
+            { "deployment_id", FortniteUtils.EOSDeploymentId }
+        });
+        var response = await Http.SendAsync(request);
+        if (!response.IsSuccessStatusCode) throw new Exception("Failed to login EOS");
+        var data = JsonSerializer.Deserialize<EOSAuthData>(await response.Content.ReadAsStringAsync()) ?? throw new Exception("Failed to deserialize EOS authentication data");
+        return new EOSAuthSession(data, ClientSecret);
+    }
+
+    public async ValueTask DisposeAsync() {
         var request = new HttpRequestMessage(HttpMethod.Delete, $"https://account-public-service-prod.ol.epicgames.com/account/api/oauth/sessions/kill/{AccessToken}");
         request.Headers.Add("Authorization", $"bearer {AccessToken}");
-        Http.SendAsync(request).Wait();
+        await Http.SendAsync(request);
+        Http.Dispose();
+        RefreshTimer?.Dispose();
+        RefreshLock.Dispose();
+        GC.SuppressFinalize(this);
+    }
+}
+
+public class EOSAuthSession : AuthSession<EOSAuthData>, IAsyncDisposable {
+    public string ApplicationId { get; private set; }
+    public string RefreshToken { get; private set; }
+    public string Scope { get; private set; }
+
+    private HttpClient Http = new();
+    public SemaphoreSlim RefreshLock { get; } = new(1, 1);
+    public Timer? RefreshTimer { get; private set; }
+
+    public EOSAuthSession(EOSAuthData data, string clientSecret) : base(data, clientSecret) {
+        ApplicationId = data.ApplicationId;
+        RefreshToken = data.RefreshToken;
+        Scope = data.Scope;
+    }
+
+    private void SetRefreshTimer() {
+        RefreshTimer = new(new(async (state) => await Refresh()), null, TimeSpan.FromSeconds(ExpiresIn), Timeout.InfiniteTimeSpan);
+    }
+
+    public async Task Refresh() {
+        await RefreshLock.WaitAsync();
+        Logging.Debug($"{ApplicationId} refreshing authentication...");
+        try {
+            RefreshTimer?.Dispose();
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://api.epicgames.dev/epic/oauth/v2/token");
+            request.Headers.Add("Authorization", $"basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"{ClientId}:{ClientSecret}"))}");
+            request.Content = new FormUrlEncodedContent(new Dictionary<string, string>() {
+                { "grant_type", "refresh_token" },
+                { "refresh_token", RefreshToken },
+                { "deployment_id", FortniteUtils.EOSDeploymentId }
+            });
+            var response = await Http.SendAsync(request);
+            if (!response.IsSuccessStatusCode) throw new Exception("Failed to refresh authentication");
+            var data = JsonSerializer.Deserialize<EOSAuthData>(await response.Content.ReadAsStringAsync()) ?? throw new Exception("Failed to deserialize authentication data");
+            AccessToken = data.AccessToken;
+            ExpiresAt = FortniteUtils.ConvertToDateTime(data.ExpiresAt);
+            RefreshToken = data.RefreshToken;
+            ExpiresIn = data.ExpiresIn;
+            SetRefreshTimer();
+            Logging.Debug($"{ApplicationId} refreshed authentication");
+        } finally {
+            RefreshLock.Release();
+        }
+    }
+
+    public async ValueTask DisposeAsync() {
+        var request = new HttpRequestMessage(HttpMethod.Delete, "https://api.epicgames.dev/epic/oauth/v2/revoke");
+        request.Content = new FormUrlEncodedContent(new Dictionary<string, string>() {
+            { "token", AccessToken }
+        });
+        await Http.SendAsync(request);
         Http.Dispose();
         RefreshTimer?.Dispose();
         RefreshLock.Dispose();

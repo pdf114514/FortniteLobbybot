@@ -15,11 +15,11 @@ public class ExternalAuth {
     }
 
     [K("accountId")] public required string AccountId { get; init; }
-    [K("displayName")] public required string Type { get; init; }
-    [K("type")] public required string ExternalAuthId { get; init; }
-    [K("externalAuthIdType")] public required string ExternalAuthIdType { get; init; }
+    [K("type")] public required string Type { get; init; }
+    [K("externalAuthId")] public string? ExternalAuthId { get; init; }
+    [K("externalAuthIdType")] public string? ExternalAuthIdType { get; init; }
     [K("externalDisplayName")] public string? ExternalDisplayName { get; init; }
-    [K("authIds")] public required ReadOnlyCollection<AuthId> AuthIds { get; init; }
+    [K("authIds")] public required List<AuthId> AuthIds { get; init; }
 }
 
 public class ExternalAuths {

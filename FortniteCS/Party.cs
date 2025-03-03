@@ -626,6 +626,8 @@ public class FortniteClientParty : FortniteParty {
     public FortniteClientParty(FortniteClient client, FortniteParty party) : base(client, party) {}
 
     public FortniteClientPartyMember Me => (FortniteClientPartyMember)Members[Client.User.AccountId];
+
+    public Task SendMessage(string message) => Client.SendMessageToParty(message);
 }
 
 public class FortnitePartyJoinRequest {

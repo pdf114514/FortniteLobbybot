@@ -21,7 +21,7 @@ public class FortniteXMPP : IDisposable {
             _ReadyTasks.Clear();
 
             // SendPresence(new()); // if you dont you will be shown as offline ?
-            SendPresence(new() { Status = "…" + new string('\u2029', 100) + "…?" }, "dnd");
+            SendPresence(new() { Status = "…" + new string('\u2029', 100) + "…?" }, EFortnitePresenceOnlineType.Online);
         };
 
         Connection.Presence += async (XmppConnection sender, XMPPPresence e) => {
@@ -359,7 +359,7 @@ public class FortniteXMPP : IDisposable {
                     break;
                 }
                 case "com.epicgames.social.party.notification.v0.INVITE_DECLINED": break;
-                default: Logging.Warn($"Unknown XMPP message type: {type}"); break;
+                default: Logging.Warn($"Unhandled XMPP message type: {type}"); break;
             }
         };
 
@@ -413,7 +413,7 @@ public class FortniteXMPP : IDisposable {
         Connection.Send(presence);
     }
 
-    public void SendMessage(string partyId, string messageString) {
+    /* public void SendMessage(string partyId, string messageString) {
         var message = new XMPPMessage() {
             To = new($"Party-{partyId}@muc.prod.ol.epicgames.com"),
             Text = messageString
@@ -421,7 +421,7 @@ public class FortniteXMPP : IDisposable {
         message.SetAttributeValue("id", Guid.NewGuid().ToString("N"));
         message.SetAttributeValue("type", "groupchat");
         Connection.Send(message);
-    }
+    } */
 
     public void Dispose() {
         Connection.Dispose();

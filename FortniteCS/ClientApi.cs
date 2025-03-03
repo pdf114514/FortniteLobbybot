@@ -4,6 +4,16 @@ using System.Text.Json;
 
 namespace FortniteCS;
 
+public class PublicKeyData {
+    [K("key")] public required string Key { get; init; } // `key` value from the request
+    [K("account_id")] public required string AccountId { get; init; } // account id of the authenticated user
+    [K("key_guid")] public required string KeyGuid { get; init; } // uuid
+    [K("kid")] public required string Kid { get; init; } // 8 digit number
+    [K("expiration")] public required string Expiration { get; init; } // ex: 2025-01-01T10:10:10.000000000Z
+    [K("jwt")] public required string Jwt { get; init; }
+    [K("type")] public required string Type { get; init; } // legacy
+}
+
 public partial class FortniteClient {
     public SemaphoreSlim PartyLock { get; } = new(1, 1);
     public SemaphoreSlim PartyChatLock { get; } = new(1, 1);
@@ -32,6 +42,25 @@ public partial class FortniteClient {
         return new(JsonSerializer.Deserialize<FortniteUserData>(json) ?? throw new Exception("Failed to deserialize json!"));
     }
 
+    public async Task<List<FortniteUser>> GetUsersByAccountIds(params IEnumerable<string> accountIds) {
+        var chunks = accountIds.Select((x, i) => (Index: i, Value: x)).GroupBy(x => x.Index / 100).Select(x => x.Select(v => v.Value).ToArray()).ToArray();
+        async Task<IEnumerable<FortniteUser>> createTask(IEnumerable<string> accountIds) {
+            try {
+                var uri = new UriBuilder("https://account-public-service-prod.ol.epicgames.com/account/api/public/account");
+                uri.Query = string.Join("&", accountIds.Select(x => $"accountId={x}"));
+                var request = new HttpRequestMessage(HttpMethod.Get, uri.ToString());
+                request.Headers.Add("Authorization", $"bearer {Session.AccessToken}");
+                var response = await Http.SendAsync(request);
+                if (response.StatusCode != HttpStatusCode.OK) throw new Exception("Failed to get users!");
+                return JsonSerializer.Deserialize<IEnumerable<FortniteUserData>>(await response.Content.ReadAsStringAsync())?.Select(x => new FortniteUser(x)) ?? throw new Exception("Failed to deserialize json!");
+            } catch (Exception e) {
+                Logging.Error(e.ToString());
+                throw;
+            }
+        }
+        return (await Task.WhenAll(chunks.Select(createTask))).SelectMany(x => x).ToList();
+    }
+
     #endregion
 
     #region Friends
@@ -45,9 +74,20 @@ public partial class FortniteClient {
         var response = await Http.SendAsync(request);
         if (response.StatusCode != HttpStatusCode.OK) throw new Exception("Failed to get friends!");
         var friendsSummary = JsonSerializer.Deserialize<FriendsSummaryData>(await response.Content.ReadAsStringAsync()) ?? throw new Exception("Failed to deserialize json!");
-        foreach (var friend in friendsSummary.Friends) _Friends.Add(new(friend));
+        foreach (var friend in friendsSummary.Friends) _Friends.Add(new(this, friend));
         foreach (var incoming in friendsSummary.Incoming) _PendingFriends.Add(new IncomingPendingFriend(incoming));
         foreach (var outgoing in friendsSummary.Outgoing) _PendingFriends.Add(new OutgoingPendingFriend(outgoing));
+
+        var users = await GetUsersByAccountIds(_Friends.Select(x => x.AccountId));
+        foreach (var user in users) {
+            try {
+                var friend = _Friends.FirstOrDefault(x => x.AccountId == user.AccountId);
+                if (friend is not null) friend.DisplayName = user.DisplayName;
+            } catch (Exception e) {
+                if (e.Message == "The user has no displayname!") continue;
+                throw;
+            }
+        }
     }
 
     public async Task<FortniteFriend> GetFriend(string accountId) {
@@ -56,7 +96,7 @@ public partial class FortniteClient {
         var response = await Http.SendAsync(request);
         if (response.StatusCode != HttpStatusCode.OK) throw new Exception("Failed to get friend!");
         var json = await response.Content.ReadAsStringAsync();
-        var friend = new FortniteFriend(JsonSerializer.Deserialize<FortniteFriendData>(json) ?? throw new Exception("Failed to deserialize json!"));
+        var friend = new FortniteFriend(this, JsonSerializer.Deserialize<FortniteFriendData>(json) ?? throw new Exception("Failed to deserialize json!"));
         if (!_Friends.Any(x => x.AccountId == friend.AccountId)) _Friends.Add(friend);
         return friend;
     }
@@ -292,6 +332,100 @@ public partial class FortniteClient {
         var response = await Http.SendAsync(request);
         joinConfirmation.Handled = true;
         if (!response.IsSuccessStatusCode) Logging.Warn($"Failed to reject party join confirmation! {response.StatusCode}");
+    }
+
+    #endregion
+
+    #region EOS
+
+    public async Task SendPresence(string connectionId) {
+        var request = new HttpRequestMessage(HttpMethod.Patch, $"https://api.epicgames.dev/epic/presence/v1/{FortniteUtils.EOSDeploymentId}/{User.AccountId}/presence/{connectionId}");
+        request.Headers.Add("Authorization", $"bearer {EOSSession.AccessToken}");
+        request.Content = new StringContent(JsonSerializer.Serialize(new {
+            status = "online",
+            activity = new {
+                value = ""
+            },
+            props = new {
+                EOS_Platform = "WIN", // Config.Platform
+                EOS_IntegratedPlatform = "EGS",
+                EOS_OnlinePlatformType = 100,
+                EOS_ProductVersion = FortniteUtils.Build,
+                EOS_ProductName = "Fortnite",
+                EOS_Session = "{\"version:3\"}",
+                EOS_Lobby = "{\"version:3\"}"
+            },
+            conn = new {
+                props = new {}
+            }
+        }), Encoding.UTF8, "application/json");
+        var response = await Http.SendAsync(request);
+        if (!response.IsSuccessStatusCode) Logging.Warn($"Failed SendEOSPresence! {response.StatusCode}");
+    }
+
+    private async Task<PublicKeyData> PublicKey(string key) {
+        var request = new HttpRequestMessage(HttpMethod.Post, "https://publickey-service-live.ecosec.on.epicgames.com/publickey/v2/publickey/");
+        request.Headers.Add("Authorization", $"bearer {Session.AccessToken}");
+        request.Content = new StringContent(JsonSerializer.Serialize(new {
+            algorithm = "ed25519", // any value ok; may not effecting the result ?
+            key = Convert.ToBase64String(Encoding.UTF8.GetBytes(key))
+        }), Encoding.UTF8, "application/json");
+        var response = await Http.SendAsync(request);
+        if (!response.IsSuccessStatusCode) throw new Exception($"Failed to get public key! {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
+        return JsonSerializer.Deserialize<PublicKeyData>(await response.Content.ReadAsStringAsync()) ?? throw new Exception("Failed to deserialize json!");
+    }
+
+    // Cursed part 💀
+    public async Task SendMessageToFriend(FortniteFriend friend, string message) {
+        if (message.Length >= 2048) throw new Exception("Message is too long!");
+        var keyBuffer = new byte[16];
+        new Random(Encoding.UTF8.GetBytes(User.AccountId).Sum(x => x)).NextBytes(keyBuffer);
+        var pk = await PublicKey(Convert.ToBase64String(keyBuffer));
+        var pld = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new {
+            mid = Guid.NewGuid().ToString("N").ToUpper(),
+            sid = User.AccountId,
+            rid = "None",
+            msg = message,
+            tst = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            seq = 1,
+            rec = false,
+            mts = new List<object>(),
+            cty = "Whisper"
+        }, new JsonSerializerOptions() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping, WriteIndented = true, IndentCharacter = '\t', IndentSize = 1 })+'\0'));
+        var request = new HttpRequestMessage(HttpMethod.Post, $"https://api.epicgames.dev/epic/chat/v1/public/{FortniteUtils.EOSDeploymentId}/whisper/{User.AccountId}/{friend.AccountId}");
+        request.Headers.Add("Authorization", $"bearer {EOSSession.AccessToken}");
+        request.Content = new StringContent(JsonSerializer.Serialize(new {
+            message = new {
+                body = message
+            },
+            metadata = new {
+                Pub = pk.Jwt,
+                Sig = "",
+                Pld = pld,
+                PlfNm = "WIN",
+                PlfId = User.AccountId,
+                WaToRec = false
+            }
+        }, new JsonSerializerOptions() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }), Encoding.UTF8, "application/json");
+        var response = await Http.SendAsync(request);
+        Logging.Debug($"SendMessageToFriend: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
+        if (!response.IsSuccessStatusCode) Logging.Warn($"Failed to send message to friend! {response.StatusCode}");
+    }
+
+    public async Task SendMessageToParty(string message) {
+        if (message.Length >= 2048) throw new Exception("Message is too long!");
+        if (Party is null) throw new Exception("Not in a party!");
+        if (Party.Members.Count <= 1) throw new Exception("No one in the party!");
+        var request = new HttpRequestMessage(HttpMethod.Post, $"https://api.epicgames.dev/epic/chat/v1/public/{FortniteUtils.EOSDeploymentId}/conversations/p-{Party.PartyId}/messages?fromAccountId={User.AccountId}");
+        request.Headers.Add("Authorization", $"bearer {EOSSession.AccessToken}");
+        request.Content = new StringContent(JsonSerializer.Serialize(new {
+            allowedRecipients = Party.Members.Keys,
+            message = new {
+                body = message
+            }
+        }), Encoding.UTF8, "application/json");
+        var response = await Http.SendAsync(request);
+        if (!response.IsSuccessStatusCode) Logging.Warn($"Failed to send message to party! {response.StatusCode}");
     }
 
     #endregion
